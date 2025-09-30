@@ -1,14 +1,20 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { getBatches, deleteBatch } from "@/lib/storage"
-import type { Batch } from "@/lib/types"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Bold as Bottle } from "lucide-react"
-import Link from "next/link"
-import { EditBatchDialog } from "./edit-batch-dialog"
+import { useState } from "react";
+import type { Batch } from "@/lib/types";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Pencil, Trash2, Bold as Bottle } from "lucide-react";
+import Link from "next/link";
+import { EditBatchDialog } from "./edit-batch-dialog";
+import { api } from "@/trpc/react";
 
 const statusColors = {
   planning: "bg-secondary text-secondary-foreground",
@@ -16,26 +22,21 @@ const statusColors = {
   fermenting: "bg-chart-2 text-primary-foreground",
   bottled: "bg-chart-1 text-primary-foreground",
   completed: "bg-muted text-muted-foreground",
-}
+};
 
 export function BatchList() {
-  const [batches, setBatches] = useState<Batch[]>([])
-  const [editingBatch, setEditingBatch] = useState<Batch | null>(null)
+  const { data: batches = [], refetch } = api.batch.getAll.useQuery();
+  const deleteMutation = api.batch.delete.useMutation({
+    onSuccess: () => refetch(),
+  });
 
-  useEffect(() => {
-    loadBatches()
-  }, [])
-
-  const loadBatches = () => {
-    setBatches(getBatches())
-  }
+  const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this batch?")) {
-      deleteBatch(id)
-      loadBatches()
+      deleteMutation.mutate({ id });
     }
-  }
+  };
 
   if (batches.length === 0) {
     return (
@@ -44,16 +45,21 @@ export function BatchList() {
           <Bottle className="h-10 w-10 text-muted-foreground" />
         </div>
         <h2 className="text-xl font-semibold mb-2">No batches yet</h2>
-        <p className="text-muted-foreground mb-6">Create your first brewing batch to get started</p>
+        <p className="text-muted-foreground mb-6">
+          Create your first brewing batch to get started
+        </p>
       </div>
-    )
+    );
   }
 
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {batches.map((batch) => (
-          <Card key={batch.id} className="hover:border-primary/50 transition-colors">
+          <Card
+            key={batch.id}
+            className="hover:border-primary/50 transition-colors"
+          >
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -61,15 +67,23 @@ export function BatchList() {
                     <Badge variant="outline" className="font-mono">
                       #{batch.batchNumber}
                     </Badge>
-                    <Badge className={statusColors[batch.status]}>{batch.status}</Badge>
+                    <Badge className={statusColors[batch.status]}>
+                      {batch.status}
+                    </Badge>
                   </div>
                   <CardTitle className="text-balance">{batch.name}</CardTitle>
-                  <CardDescription className="text-pretty">{batch.description}</CardDescription>
+                  <CardDescription className="text-pretty">
+                    {batch.description}
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              {batch.note && <p className="text-sm text-muted-foreground mb-4 text-pretty">{batch.note}</p>}
+              {batch.note && (
+                <p className="text-sm text-muted-foreground mb-4 text-pretty">
+                  {batch.note}
+                </p>
+              )}
               <div className="flex items-center gap-2">
                 <Button asChild variant="default" size="sm" className="flex-1">
                   <Link href={`/batch/${batch.id}`}>
@@ -77,10 +91,18 @@ export function BatchList() {
                     Manage Bottles
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setEditingBatch(batch)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingBatch(batch)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDelete(batch.id)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(batch.id)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -94,9 +116,9 @@ export function BatchList() {
           batch={editingBatch}
           open={!!editingBatch}
           onOpenChange={(open) => !open && setEditingBatch(null)}
-          onSave={loadBatches}
+          onSave={() => refetch()}
         />
       )}
     </>
-  )
+  );
 }

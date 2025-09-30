@@ -1,16 +1,24 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import type { Bottle } from "@/lib/types"
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Bottle } from "@/lib/types";
+import { api } from "@/trpc/react";
 
 interface AssignBottleDialogProps {
-  availableBottles: Bottle[]
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onAssign: (bottleId: string) => void
+  availableBottles: Bottle[];
+  batchId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAssign: (bottleId: string) => void;
 }
 
 const bottleStatusColors = {
@@ -18,24 +26,46 @@ const bottleStatusColors = {
   filled: "bg-chart-4 text-primary-foreground",
   conditioning: "bg-chart-2 text-primary-foreground",
   ready: "bg-chart-1 text-primary-foreground",
-}
+};
 
-export function AssignBottleDialog({ availableBottles, open, onOpenChange, onAssign }: AssignBottleDialogProps) {
+export function AssignBottleDialog({
+  availableBottles,
+  batchId,
+  open,
+  onOpenChange,
+  onAssign,
+}: AssignBottleDialogProps) {
+  const assignMutation = api.bottle.assignToBatch.useMutation();
+
+  const handleAssign = async (bottleId: string) => {
+    await assignMutation.mutateAsync({
+      bottleId,
+      batchId,
+    });
+    onAssign(bottleId);
+  };
+
   if (availableBottles.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Assign Bottle</DialogTitle>
-            <DialogDescription>No available bottles to assign</DialogDescription>
+            <DialogDescription>
+              No available bottles to assign
+            </DialogDescription>
           </DialogHeader>
           <div className="py-8 text-center">
-            <p className="text-muted-foreground">All bottles are currently assigned to batches.</p>
-            <p className="text-sm text-muted-foreground mt-2">Create a new bottle to continue.</p>
+            <p className="text-muted-foreground">
+              All bottles are currently assigned to batches.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Create a new bottle to continue.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
-    )
+    );
   }
 
   return (
@@ -43,20 +73,27 @@ export function AssignBottleDialog({ availableBottles, open, onOpenChange, onAss
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Assign Bottle to Batch</DialogTitle>
-          <DialogDescription>Select a bottle to assign to this batch</DialogDescription>
+          <DialogDescription>
+            Select a bottle to assign to this batch
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-4 max-h-[400px] overflow-y-auto">
           {availableBottles.map((bottle) => (
-            <Card key={bottle.id} className="hover:border-primary/50 transition-colors cursor-pointer">
+            <Card
+              key={bottle.id}
+              className="hover:border-primary/50 transition-colors cursor-pointer"
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Badge variant="outline" className="font-mono">
                       #{bottle.bottleNumber}
                     </Badge>
-                    <Badge className={bottleStatusColors[bottle.status]}>{bottle.status}</Badge>
+                    <Badge className={bottleStatusColors[bottle.status]}>
+                      {bottle.status}
+                    </Badge>
                   </div>
-                  <Button size="sm" onClick={() => onAssign(bottle.id)}>
+                  <Button size="sm" onClick={() => handleAssign(bottle.id)}>
                     Assign
                   </Button>
                 </div>
@@ -66,5 +103,5 @@ export function AssignBottleDialog({ availableBottles, open, onOpenChange, onAss
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

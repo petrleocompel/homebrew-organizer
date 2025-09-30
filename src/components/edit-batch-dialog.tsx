@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,28 +11,41 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { saveBatch } from "@/lib/storage"
-import type { Batch, BatchStatus } from "@/lib/types"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Batch, BatchStatus } from "@/lib/types";
+import { api } from "@/trpc/react";
 
 interface EditBatchDialogProps {
-  batch: Batch
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSave: () => void
+  batch: Batch;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: () => void;
 }
 
-export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatchDialogProps) {
+export function EditBatchDialog({
+  batch,
+  open,
+  onOpenChange,
+  onSave,
+}: EditBatchDialogProps) {
   const [formData, setFormData] = useState({
     name: batch.name,
     description: batch.description,
     note: batch.note,
     status: batch.status,
-  })
+  });
+
+  const updateMutation = api.batch.update.useMutation();
 
   useEffect(() => {
     setFormData({
@@ -40,25 +53,25 @@ export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatch
       description: batch.description,
       note: batch.note,
       status: batch.status,
-    })
-  }, [batch])
+    });
+  }, [batch]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const updatedBatch: Batch = {
-      ...batch,
+    await updateMutation.mutateAsync({
+      id: batch.id,
+      batchNumber: batch.batchNumber,
       name: formData.name,
       description: formData.description,
       note: formData.note,
       status: formData.status,
       updated: new Date().toISOString(),
-    }
+    });
 
-    saveBatch(updatedBatch)
-    onSave()
-    onOpenChange(false)
-  }
+    onSave();
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,7 +79,9 @@ export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatch
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Edit Batch #{batch.batchNumber}</DialogTitle>
-            <DialogDescription>Update the details of your brewing batch</DialogDescription>
+            <DialogDescription>
+              Update the details of your brewing batch
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -74,7 +89,9 @@ export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatch
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 required
               />
             </div>
@@ -83,7 +100,9 @@ export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatch
               <Input
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 required
               />
             </div>
@@ -91,7 +110,9 @@ export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatch
               <Label htmlFor="edit-status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value as BatchStatus })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, status: value as BatchStatus })
+                }
               >
                 <SelectTrigger id="edit-status">
                   <SelectValue />
@@ -110,13 +131,19 @@ export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatch
               <Textarea
                 id="edit-note"
                 value={formData.note}
-                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, note: e.target.value })
+                }
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit">Save Changes</Button>
@@ -124,5 +151,5 @@ export function EditBatchDialog({ batch, open, onOpenChange, onSave }: EditBatch
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

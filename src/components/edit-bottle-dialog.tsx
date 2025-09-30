@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { saveBottle } from "@/lib/storage"
 import type { Bottle, BottleStatus } from "@/lib/types"
+import { api } from "@/trpc/react"
 
 interface EditBottleDialogProps {
   bottle: Bottle
@@ -27,6 +27,8 @@ interface EditBottleDialogProps {
 
 export function EditBottleDialog({ bottle, open, onOpenChange, onSave, onDelete }: EditBottleDialogProps) {
   const [status, setStatus] = useState(bottle.status)
+    const updateMutation = api.bottle.update.useMutation();
+  
 
   useEffect(() => {
     setStatus(bottle.status)
@@ -41,7 +43,7 @@ export function EditBottleDialog({ bottle, open, onOpenChange, onSave, onDelete 
       updated: new Date().toISOString(),
     }
 
-    saveBottle(updatedBottle)
+    updateMutation(updatedBottle)
     onSave()
     onOpenChange(false)
   }

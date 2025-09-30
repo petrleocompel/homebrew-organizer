@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,40 +12,47 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus } from "lucide-react"
-import { saveBottle, getBottles } from "@/lib/storage"
-import type { Bottle, BottleStatus } from "@/lib/types"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import type { BottleStatus } from "@/lib/types";
+import { api } from "@/trpc/react";
 
 interface CreateBottleDialogProps {
-  onCreated: () => void
+  onCreated: () => void;
 }
 
 export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [status, setStatus] = useState<BottleStatus>("empty")
+  const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<BottleStatus>("empty");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const { data: bottles = [] } = api.bottle.getAll.useQuery();
+  const createMutation = api.bottle.create.useMutation();
 
-    const bottles = getBottles()
-    const maxBottleNumber = bottles.reduce((max, b) => Math.max(max, b.bottleNumber), 0)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const newBottle: Bottle = {
-      id: `bottle-${Date.now()}`,
+    const maxBottleNumber = bottles.reduce(
+      (max, b) => Math.max(max, b.bottleNumber),
+      0
+    );
+
+    await createMutation.mutateAsync({
       status,
       bottleNumber: maxBottleNumber + 1,
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
-    }
+    });
 
-    saveBottle(newBottle)
-    setStatus("empty")
-    setOpen(false)
-    onCreated()
-  }
+    setStatus("empty");
+    setOpen(false);
+    onCreated();
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -59,12 +66,17 @@ export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Bottle</DialogTitle>
-            <DialogDescription>Add a new bottle to your inventory</DialogDescription>
+            <DialogDescription>
+              Add a new bottle to your inventory
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="status">Initial Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as BottleStatus)}>
+              <Select
+                value={status}
+                onValueChange={(value) => setStatus(value as BottleStatus)}
+              >
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
@@ -78,7 +90,11 @@ export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit">Create Bottle</Button>
@@ -86,5 +102,5 @@ export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

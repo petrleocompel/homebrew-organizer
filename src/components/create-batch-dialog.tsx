@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,46 +12,54 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus } from "lucide-react"
-import { saveBatch, getBatches } from "@/lib/storage"
-import type { Batch, BatchStatus } from "@/lib/types"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import type { BatchStatus } from "@/lib/types";
+import { api } from "@/trpc/react";
 
 export function CreateBatchDialog() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     note: "",
     status: "planning" as BatchStatus,
-  })
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const { data: batches = [] } = api.batch.getAll.useQuery();
+  const createMutation = api.batch.create.useMutation();
+  const utils = api.useUtils();
 
-    const batches = getBatches()
-    const maxBatchNumber = batches.reduce((max, b) => Math.max(max, b.batchNumber), 0)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const newBatch: Batch = {
-      id: `batch-${Date.now()}`,
+    const maxBatchNumber = batches.reduce(
+      (max, b) => Math.max(max, b.batchNumber),
+      0
+    );
+
+    await createMutation.mutateAsync({
       batchNumber: maxBatchNumber + 1,
       name: formData.name,
       description: formData.description,
       note: formData.note,
       status: formData.status,
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
-    }
+    });
 
-    saveBatch(newBatch)
-    setFormData({ name: "", description: "", note: "", status: "planning" })
-    setOpen(false)
-    window.location.reload()
-  }
+    setFormData({ name: "", description: "", note: "", status: "planning" });
+    setOpen(false);
+    utils.batch.getAll.invalidate();
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -65,7 +73,9 @@ export function CreateBatchDialog() {
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Batch</DialogTitle>
-            <DialogDescription>Add a new brewing batch to your collection</DialogDescription>
+            <DialogDescription>
+              Add a new brewing batch to your collection
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -74,7 +84,9 @@ export function CreateBatchDialog() {
                 id="name"
                 placeholder="e.g., Summer Pale Ale"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 required
               />
             </div>
@@ -84,7 +96,9 @@ export function CreateBatchDialog() {
                 id="description"
                 placeholder="Brief description of the beer"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 required
               />
             </div>
@@ -92,7 +106,9 @@ export function CreateBatchDialog() {
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value as BatchStatus })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, status: value as BatchStatus })
+                }
               >
                 <SelectTrigger id="status">
                   <SelectValue />
@@ -112,13 +128,19 @@ export function CreateBatchDialog() {
                 id="note"
                 placeholder="Additional notes about this batch"
                 value={formData.note}
-                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, note: e.target.value })
+                }
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit">Create Batch</Button>
@@ -126,5 +148,5 @@ export function CreateBatchDialog() {
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
