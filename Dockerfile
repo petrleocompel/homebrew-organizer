@@ -1,0 +1,45 @@
+FROM node:24-alpine AS dependencies
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+FROM node:24-alpine AS build
+
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+
+ENV DATABASE_URL="postgresql://app:app@db:5432"
+ENV AUTH_SECRET=""
+ENV AUTH_URL="https://localhost"
+ARG SENTRY_AUTH_TOKEN=""
+
+RUN SKIP_ENV_VALIDATION=1 npm run build
+
+FROM node:24-alpine AS deploy
+
+
+WORKDIR /app
+
+ENV NODE_ENV production
+
+ENV DATABASE_URL="postgresql://app:app@db:5432"
+ENV AUTH_SECRET=""
+ENV AUTH_URL="https://localhost"
+
+COPY --from=build /app/public ./public
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+
+RUN mkdir /app/src/ || echo "Directory already exists"
+
+EXPOSE 3000
+ENV PORT="3000"
+ENV HOSTNAME="0.0.0.0"
+
+#CMD npm run start
+CMD ["node", "server.js"]
+
+
