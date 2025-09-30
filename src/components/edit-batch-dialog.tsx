@@ -26,7 +26,7 @@ import type { Batch, BatchStatus } from "@/lib/types";
 import { api } from "@/trpc/react";
 
 interface EditBatchDialogProps {
-  batch: Batch;
+  batch: Omit<Batch, "created" | "updated">;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
@@ -60,13 +60,12 @@ export function EditBatchDialog({
     e.preventDefault();
 
     await updateMutation.mutateAsync({
-      id: batch.id,
-      batchNumber: batch.batchNumber,
-      name: formData.name,
-      description: formData.description,
-      note: formData.note,
-      status: formData.status,
-      updated: new Date().toISOString(),
+      id: batch.id!,
+      batchNumber: batch.batchNumber!,
+      name: formData.name!,
+      description: formData.description!,
+      note: formData.note!,
+      status: formData.status!,
     });
 
     onSave();

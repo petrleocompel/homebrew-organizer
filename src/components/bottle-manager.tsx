@@ -46,7 +46,10 @@ export function BottleManager({ batchId }: BottleManagerProps) {
     },
   });
 
-  const [editingBottle, setEditingBottle] = useState<Bottle | null>(null);
+  const [editingBottle, setEditingBottle] = useState<Omit<
+    Bottle,
+    "created" | "updated"
+  > | null>(null);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
 
   const handleUnassign = (bottleId: string) => {
@@ -74,7 +77,9 @@ export function BottleManager({ batchId }: BottleManagerProps) {
     );
   }
 
-  const availableBottles = allBottles.filter((b) => !b.currentBatchId);
+  const availableBottles: Bottle[] = allBottles.filter(
+    (b) => !b.currentBatchId
+  ) as any as Bottle[];
 
   return (
     <div className="space-y-6">
@@ -180,7 +185,11 @@ export function BottleManager({ batchId }: BottleManagerProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setEditingBottle(bottle)}
+                    onClick={() =>
+                      setEditingBottle(
+                        bottle as Omit<Bottle, "created" | "updated">
+                      )
+                    }
                   >
                     Edit
                   </Button>
@@ -200,7 +209,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 
       {editingBottle && (
         <EditBottleDialog
-          bottle={editingBottle}
+          bottle={editingBottle as Omit<Bottle, "created" | "updated">}
           open={!!editingBottle}
           onOpenChange={(open) => !open && setEditingBottle(null)}
           onSave={refetchAssignedBottles}

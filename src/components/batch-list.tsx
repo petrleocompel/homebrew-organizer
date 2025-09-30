@@ -30,7 +30,7 @@ export function BatchList() {
     onSuccess: () => refetch(),
   });
 
-  const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
+  const [editingBatch, setEditingBatch] = useState<Partial<Batch> | null>(null);
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this batch?")) {
@@ -94,7 +94,13 @@ export function BatchList() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setEditingBatch(batch)}
+                  onClick={() =>
+                    setEditingBatch({
+                      ...batch,
+                      created: undefined,
+                      updated: undefined,
+                    })
+                  }
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -113,7 +119,7 @@ export function BatchList() {
 
       {editingBatch && (
         <EditBatchDialog
-          batch={editingBatch}
+          batch={editingBatch as Omit<Batch, "created" | "updated">}
           open={!!editingBatch}
           onOpenChange={(open) => !open && setEditingBatch(null)}
           onSave={() => refetch()}
