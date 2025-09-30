@@ -33,6 +33,10 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 
+COPY server/db/schema.ts ./server/db/schema.ts
+COPY server/db/index.ts ./server/db/index.ts
+COPY drizzle.config.ts ./drizzle.config.ts
+
 RUN mkdir /app/src/ || echo "Directory already exists"
 
 EXPOSE 3000
