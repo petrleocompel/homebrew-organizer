@@ -39,7 +39,7 @@ COPY drizzle.config.ts ./drizzle.config.ts
 COPY tsconfig.json ./tsconfig.json
 COPY src/env.js ./src/env.js
 
-RUN npm i @t3-oss/env-nextjs zod
+RUN npm i @t3-oss/env-nextjs zod drizzle-orm
 
 RUN mkdir /app/src/ || echo "Directory already exists"
 
