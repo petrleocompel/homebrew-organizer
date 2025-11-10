@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Bold as Bottle } from "lucide-react";
+import { Pencil, Trash2, Bold as Bottle, LoaderIcon } from "lucide-react";
 import Link from "next/link";
 import { EditBatchDialog } from "./edit-batch-dialog";
 import { api } from "@/trpc/react";
@@ -25,7 +25,11 @@ const statusColors = {
 };
 
 export function BatchList() {
-  const { data: batches = [], refetch } = api.batch.getAll.useQuery();
+  const {
+    isFetched,
+    data: batches = [],
+    refetch,
+  } = api.batch.getAll.useQuery();
   const deleteMutation = api.batch.delete.useMutation({
     onSuccess: () => refetch(),
   });
@@ -37,6 +41,19 @@ export function BatchList() {
       deleteMutation.mutate({ id });
     }
   };
+  if (!isFetched) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted mb-4">
+          <LoaderIcon className="h-10 w-10 text-muted-foreground animate-spin" />
+        </div>
+        <h2 className="text-xl font-semibold mb-2">Loading batches...</h2>
+        <p className="text-muted-foreground mb-6">
+          Please wait while we fetch your batches
+        </p>
+      </div>
+    );
+  }
 
   if (batches.length === 0) {
     return (

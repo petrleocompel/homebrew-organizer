@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Beer, Calendar, Info } from "lucide-react";
+import { Beer, Calendar, Info, LoaderIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useParams } from "next/navigation";
 import { api } from "@/trpc/react";
@@ -32,7 +32,7 @@ export default function PublicBottlePage() {
   const { data: bottle, isLoading } = api.bottle.getById.useQuery({
     id: id,
   });
-  const { data: batch } = api.batch.getById.useQuery(
+  const { data: batch, isFetched: isBatchLoaded } = api.batch.getById.useQuery(
     { id: bottle?.currentBatchId || "" },
     { enabled: !!bottle?.currentBatchId }
   );
@@ -140,8 +140,7 @@ export default function PublicBottlePage() {
               </div>
             </CardContent>
           </Card>
-
-          {batch ? (
+          {isBatchLoaded && batch && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -210,7 +209,8 @@ export default function PublicBottlePage() {
                 </div>
               </CardContent>
             </Card>
-          ) : (
+          )}
+          {isBatchLoaded && !batch && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
@@ -221,6 +221,19 @@ export default function PublicBottlePage() {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   This bottle is not currently assigned to any batch.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          {!isBatchLoaded && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+                  <LoaderIcon className="h-10 w-10 text-muted-foreground animate-spin" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Loading...</h3>
+                <p className="text-sm text-muted-foreground">
+                  Please wait while we load the bottle details
                 </p>
               </CardContent>
             </Card>
