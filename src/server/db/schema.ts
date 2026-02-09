@@ -1,6 +1,5 @@
-import { relations, sql } from "drizzle-orm";
-import { index, pgTableCreator, primaryKey } from "drizzle-orm/pg-core";
-import type { AdapterAccount } from "next-auth/adapters";
+import { relations } from "drizzle-orm";
+import { index, pgTableCreator } from "drizzle-orm/pg-core";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -18,75 +17,88 @@ export const users = createTable("user", (d) => ({
     .notNull()
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: d.varchar({ length: 255 }),
-  email: d.varchar({ length: 255 }).notNull(),
-  emailVerified: d
-    .timestamp({
-      mode: "date",
-      withTimezone: true,
-    })
-    .default(sql`CURRENT_TIMESTAMP`),
+  name: d.varchar({ length: 255 }).notNull(),
+  email: d.varchar({ length: 255 }).notNull().unique(),
+  emailVerified: d.boolean().notNull().default(false),
   image: d.varchar({ length: 255 }),
+  createdAt: d.timestamp("created_at").notNull().defaultNow(),
+  updatedAt: d.timestamp("updated_at").notNull().defaultNow(),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
-}));
-
-export const accounts = createTable(
-  "account",
-  (d) => ({
-    userId: d
-      .varchar({ length: 255 })
-      .notNull()
-      .references(() => users.id),
-    type: d.varchar({ length: 255 }).$type<AdapterAccount["type"]>().notNull(),
-    provider: d.varchar({ length: 255 }).notNull(),
-    providerAccountId: d.varchar({ length: 255 }).notNull(),
-    refresh_token: d.text(),
-    access_token: d.text(),
-    expires_at: d.integer(),
-    token_type: d.varchar({ length: 255 }),
-    scope: d.varchar({ length: 255 }),
-    id_token: d.text(),
-    session_state: d.varchar({ length: 255 }),
-  }),
-  (t) => [
-    primaryKey({ columns: [t.provider, t.providerAccountId] }),
-    index("account_user_id_idx").on(t.userId),
-  ]
-);
-
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+  sessions: many(sessions),
 }));
 
 export const sessions = createTable(
   "session",
   (d) => ({
-    sessionToken: d.varchar({ length: 255 }).notNull().primaryKey(),
-    userId: d
+    id: d
       .varchar({ length: 255 })
       .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    token: d.varchar({ length: 255 }).notNull().unique(),
+    expiresAt: d.timestamp("expires_at").notNull(),
+    ipAddress: d.varchar("ip_address", { length: 255 }),
+    userAgent: d.text("user_agent"),
+    userId: d
+      .varchar("user_id", { length: 255 })
+      .notNull()
       .references(() => users.id),
-    expires: d.timestamp({ mode: "date", withTimezone: true }).notNull(),
+    createdAt: d.timestamp("created_at").notNull().defaultNow(),
+    updatedAt: d.timestamp("updated_at").notNull().defaultNow(),
   }),
-  (t) => [index("t_user_id_idx").on(t.userId)]
+  (t) => [index("session_user_id_idx").on(t.userId)]
 );
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, { fields: [sessions.userId], references: [users.id] }),
 }));
 
-export const verificationTokens = createTable(
-  "verification_token",
+export const accounts = createTable(
+  "account",
   (d) => ({
-    identifier: d.varchar({ length: 255 }).notNull(),
-    token: d.varchar({ length: 255 }).notNull(),
-    expires: d.timestamp({ mode: "date", withTimezone: true }).notNull(),
+    id: d
+      .varchar({ length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    accountId: d.varchar("account_id", { length: 255 }).notNull(),
+    providerId: d.varchar("provider_id", { length: 255 }).notNull(),
+    userId: d
+      .varchar("user_id", { length: 255 })
+      .notNull()
+      .references(() => users.id),
+    accessToken: d.text("access_token"),
+    refreshToken: d.text("refresh_token"),
+    accessTokenExpiresAt: d.timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: d.timestamp("refresh_token_expires_at"),
+    scope: d.varchar({ length: 255 }),
+    idToken: d.text("id_token"),
+    password: d.text(),
+    createdAt: d.timestamp("created_at").notNull().defaultNow(),
+    updatedAt: d.timestamp("updated_at").notNull().defaultNow(),
   }),
-  (t) => [primaryKey({ columns: [t.identifier, t.token] })]
+  (t) => [index("account_user_id_idx").on(t.userId)]
 );
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+}));
+
+export const verifications = createTable("verification", (d) => ({
+  id: d
+    .varchar({ length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  identifier: d.varchar({ length: 255 }).notNull(),
+  value: d.varchar({ length: 255 }).notNull(),
+  expiresAt: d.timestamp("expires_at").notNull(),
+  createdAt: d.timestamp("created_at").notNull().defaultNow(),
+  updatedAt: d.timestamp("updated_at").notNull().defaultNow(),
+}));
 
 // Data tables
 export const batches = createTable("batches", (d) => ({

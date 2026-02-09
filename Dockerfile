@@ -11,8 +11,8 @@ COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
 ENV DATABASE_URL="postgresql://app:app@db:5432"
-ENV AUTH_SECRET=""
-ENV AUTH_URL="https://localhost"
+ENV BETTER_AUTH_SECRET=""
+ENV BETTER_AUTH_URL="https://localhost"
 ARG SENTRY_AUTH_TOKEN=""
 
 RUN SKIP_ENV_VALIDATION=1 npm run build
@@ -25,8 +25,8 @@ WORKDIR /app
 ENV NODE_ENV production
 
 ENV DATABASE_URL="postgresql://app:app@db:5432"
-ENV AUTH_SECRET=""
-ENV AUTH_URL="https://localhost"
+ENV BETTER_AUTH_SECRET=""
+ENV BETTER_AUTH_URL="https://localhost"
 
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./package.json

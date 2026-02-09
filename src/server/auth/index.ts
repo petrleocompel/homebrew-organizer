@@ -1,10 +1,25 @@
-import NextAuth from "next-auth";
-import { cache } from "react";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-import { authConfig } from "./config";
+import { db } from "@/server/db";
+import {
+	accounts,
+	sessions,
+	users,
+	verifications,
+} from "@/server/db/schema";
 
-const { auth: uncachedAuth, handlers, signIn, signOut } = NextAuth(authConfig);
-
-const auth = cache(uncachedAuth);
-
-export { auth, handlers, signIn, signOut };
+export const auth = betterAuth({
+	database: drizzleAdapter(db, {
+		provider: "pg",
+		schema: {
+			user: users,
+			session: sessions,
+			account: accounts,
+			verification: verifications,
+		},
+	}),
+	emailAndPassword: {
+		enabled: true,
+	},
+});
