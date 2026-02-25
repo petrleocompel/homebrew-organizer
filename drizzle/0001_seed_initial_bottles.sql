@@ -1,5 +1,5 @@
 -- Seed initial bottles 1-10 with status 'empty'
-INSERT INTO "homebrew-organizer_bottles" ("id", "status", "bottle_number", "created", "updated")
+INSERT INTO "ho_bottles" ("id", "status", "bottle_number", "created", "updated")
 VALUES
   (1, 'empty', 1, NOW(), NOW()),
   (2, 'empty', 2, NOW(), NOW()),

@@ -12,15 +12,15 @@ A web app for tracking homebrew batches and bottles through their full lifecycle
 
 ## Routes
 
-| Path | Access | Description |
-|---|---|---|
-| `/` | Public | Read-only list of all batches |
-| `/batch/[id]` | Public | Batch details + assigned bottles |
-| `/bottle/[id]` | Public | Individual bottle status |
-| `/admin` | Protected | Batch management (create, edit, delete) |
-| `/admin/batch/[id]` | Protected | Bottle management for a batch |
-| `/admin/bottle/[id]` | Protected | Individual bottle edit |
-| `/sign-in` | Public | Admin sign-in |
+| Path                 | Access    | Description                             |
+| -------------------- | --------- | --------------------------------------- |
+| `/`                  | Public    | Read-only list of all batches           |
+| `/batch/[id]`        | Public    | Batch details + assigned bottles        |
+| `/bottle/[id]`       | Public    | Individual bottle status                |
+| `/admin`             | Protected | Batch management (create, edit, delete) |
+| `/admin/batch/[id]`  | Protected | Bottle management for a batch           |
+| `/admin/bottle/[id]` | Protected | Individual bottle edit                  |
+| `/sign-in`           | Public    | Admin sign-in                           |
 
 ## Stack
 
@@ -79,30 +79,30 @@ BETTER_AUTH_URL=https://your-domain.com
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start dev server with Turbopack |
-| `npm run build` | Production build |
-| `npm run typecheck` | TypeScript type check |
-| `npm run check` | Biome lint + format check |
-| `npm run check:write` | Biome auto-fix (safe) |
-| `npm run db:push` | Push schema directly to DB (dev) |
-| `npm run db:generate` | Generate Drizzle migration files |
-| `npm run db:migrate` | Run pending migrations |
-| `npm run db:studio` | Open Drizzle Studio GUI |
-| `npm run db:seed-admin` | Create the default admin user |
-| `./start-database.sh` | Start local PostgreSQL via Docker/Podman |
+| Command                 | Description                              |
+| ----------------------- | ---------------------------------------- |
+| `npm run dev`           | Start dev server with Turbopack          |
+| `npm run build`         | Production build                         |
+| `npm run typecheck`     | TypeScript type check                    |
+| `npm run check`         | Biome lint + format check                |
+| `npm run check:write`   | Biome auto-fix (safe)                    |
+| `npm run db:push`       | Push schema directly to DB (dev)         |
+| `npm run db:generate`   | Generate Drizzle migration files         |
+| `npm run db:migrate`    | Run pending migrations                   |
+| `npm run db:studio`     | Open Drizzle Studio GUI                  |
+| `npm run db:seed-admin` | Create the default admin user            |
+| `./start-database.sh`   | Start local PostgreSQL via Docker/Podman |
 
 ## Database
 
-Schema is defined in `src/server/db/schema.ts`. Tables are prefixed with `homebrew-organizer_` to support multi-project databases.
+Schema is defined in `src/server/db/schema.ts`. Tables are prefixed with `ho_` to support multi-project databases.
 
 **Key tables:**
 
-- `homebrew-organizer_batches` — brewing batches
-- `homebrew-organizer_bottles` — physical bottles
-- `homebrew-organizer_batch_bottles` — batch ↔ bottle assignments
-- `homebrew-organizer_user/session/account/verification` — better-auth tables
+- `ho_batches` — brewing batches
+- `ho_bottles` — physical bottles
+- `ho_batch_bottles` — batch ↔ bottle assignments
+- `ho_user/session/account/verification` — better-auth tables
 
 For development, use `db:push` to sync the schema without migrations. For production, generate and run migrations with `db:generate` + `db:migrate`.
 

@@ -29,7 +29,7 @@ Homebrew Organizer is a T3 Stack application for managing homebrew batches and b
 **Key directories:**
 - `src/server/api/routers/` — tRPC routers (`batch.ts`, `bottle.ts`), registered in `root.ts`
 - `src/server/api/trpc.ts` — tRPC initialization, defines `publicProcedure` and `protectedProcedure`
-- `src/server/db/schema.ts` — Drizzle schema; all tables prefixed with `homebrew-organizer_` (multi-project schema)
+- `src/server/db/schema.ts` — Drizzle schema; all tables prefixed with `ho_` (multi-project schema)
 - `src/server/auth/` — better-auth config with Drizzle adapter
 - `src/trpc/` — Client-side tRPC setup (`react.tsx` for React Query hooks, `server.ts` for RSC caller)
 - `src/components/ui/` — shadcn/ui primitives
