@@ -42,6 +42,7 @@ export const bottleRouter = createTRPCRouter({
 			z.object({
 				status: z.enum(["empty", "filled", "conditioning", "ready"]),
 				bottleNumber: z.number(),
+				label: z.string().nullish(),
 				currentBatchId: z.string().optional(),
 			}),
 		)
@@ -50,12 +51,27 @@ export const bottleRouter = createTRPCRouter({
 			return result[0];
 		}),
 
+	createMany: protectedProcedure
+		.input(
+			z.array(
+				z.object({
+					bottleNumber: z.number(),
+					status: z.enum(["empty", "filled", "conditioning", "ready"]),
+					label: z.string().nullish(),
+				}),
+			),
+		)
+		.mutation(async ({ ctx, input }) => {
+			return await ctx.db.insert(bottles).values(input).returning();
+		}),
+
 	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
 				status: z.enum(["empty", "filled", "conditioning", "ready"]),
 				bottleNumber: z.number(),
+				label: z.string().nullish(),
 				currentBatchId: z.string().optional(),
 			}),
 		)

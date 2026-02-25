@@ -101,7 +101,7 @@ export default function AdminBottlePage() {
 							</div>
 							<div>
 								<h1 className="text-balance font-bold text-2xl">
-									Bottle #{bottle.bottleNumber}
+									Bottle {bottle.label ?? `#${bottle.bottleNumber}`}
 								</h1>
 								<p className="text-muted-foreground text-sm">
 									Admin — bottle details
@@ -143,7 +143,7 @@ export default function AdminBottlePage() {
 										Bottle Number
 									</p>
 									<Badge variant="outline" className="font-mono text-base">
-										#{bottle.bottleNumber}
+										{bottle.label ?? `#${bottle.bottleNumber}`}
 									</Badge>
 								</div>
 								<div>

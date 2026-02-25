@@ -1,6 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { AdminNav } from "@/components/admin-nav";
 import { SignOutButton } from "@/components/sign-out-button";
 import { auth } from "@/server/auth";
 
@@ -27,6 +28,7 @@ export default async function AdminLayout({
 					<SignOutButton />
 				</div>
 			</div>
+			<AdminNav />
 			{children}
 		</div>
 	);

@@ -21,6 +21,7 @@ export interface Bottle {
 	id: string;
 	status: BottleStatus;
 	bottleNumber: number;
+	label?: string | null;
 	currentBatchId?: string;
 	created: string;
 	updated: string;

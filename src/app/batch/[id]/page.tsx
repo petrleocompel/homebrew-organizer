@@ -148,7 +148,7 @@ export default function PublicBatchPage() {
 										>
 											<div className="flex items-center justify-between rounded-lg border p-3 transition-colors group-hover:border-primary/50">
 												<span className="font-medium font-mono text-sm">
-													#{bottle.bottleNumber}
+													{bottle.label ?? `#${bottle.bottleNumber}`}
 												</span>
 												<Badge className={bottleStatusColors[bottle.status]}>
 													{bottle.status}

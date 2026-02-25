@@ -156,7 +156,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 									<div className="flex-1">
 										<div className="mb-1 flex items-center gap-2">
 											<Badge variant="outline" className="font-mono">
-												#{bottle.bottleNumber}
+												{bottle.label ?? `#${bottle.bottleNumber}`}
 											</Badge>
 											<Badge className={bottleStatusColors[bottle.status]}>
 												{bottle.status}

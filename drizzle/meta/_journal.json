@@ -15,6 +15,13 @@
       "when": 1772009056549,
       "tag": "0001_seed_initial_bottles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1740528000000,
+      "tag": "0002_add_bottle_label",
+      "breakpoints": true
     }
   ]
 }
