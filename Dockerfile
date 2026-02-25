@@ -35,6 +35,7 @@ COPY --from=build /app/.next/static ./.next/static
 
 COPY src/server/db/schema.ts ./src/server/db/schema.ts
 COPY src/server/db/index.ts ./src/server/db/index.ts
+COPY drizzle drizzle
 COPY drizzle.config.ts ./drizzle.config.ts
 COPY tsconfig.json ./tsconfig.json
 COPY src/env.js ./src/env.js
