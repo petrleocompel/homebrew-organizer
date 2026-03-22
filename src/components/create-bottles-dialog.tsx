@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,12 +53,9 @@ export function CreateBottlesDialog({ onCreated }: CreateBottlesDialogProps) {
 	const [guidPreviews, setGuidPreviews] = useState<string[]>([]);
 
 	useEffect(() => {
-		if (open) {
-			const nextMax = maxBottleNumber;
-			setFromNum(nextMax + 1);
-			setToNum(nextMax + 10);
-		}
-	}, [open, maxBottleNumber]);
+		setFromNum(maxBottleNumber + 1);
+		setToNum(maxBottleNumber + 10);
+	}, [maxBottleNumber]);
 
 	useEffect(() => {
 		const count = Math.max(1, Math.min(100, guidCount));
@@ -77,25 +75,39 @@ export function CreateBottlesDialog({ onCreated }: CreateBottlesDialogProps) {
 		numericRange.length > 0;
 
 	const handleNumericSubmit = async () => {
-		await createManyMutation.mutateAsync(
-			numericRange.map((n) => ({ bottleNumber: n, status: numericStatus })),
-		);
-		setOpen(false);
-		onCreated();
+		try {
+			await createManyMutation.mutateAsync(
+				numericRange.map((n) => ({ bottleNumber: n, status: numericStatus })),
+			);
+			setOpen(false);
+			onCreated();
+			toast.success(`Created ${numericRange.length} bottles`);
+		} catch (err) {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to create bottles",
+			);
+		}
 	};
 
 	const handleGuidSubmit = async () => {
 		const count = Math.max(1, Math.min(100, guidCount));
 		const nextMax = maxBottleNumber;
-		await createManyMutation.mutateAsync(
-			guidPreviews.slice(0, count).map((uuid, i) => ({
-				bottleNumber: nextMax + i + 1,
-				status: guidStatus,
-				label: uuid,
-			})),
-		);
-		setOpen(false);
-		onCreated();
+		try {
+			await createManyMutation.mutateAsync(
+				guidPreviews.slice(0, count).map((uuid, i) => ({
+					bottleNumber: nextMax + i + 1,
+					status: guidStatus,
+					label: uuid,
+				})),
+			);
+			setOpen(false);
+			onCreated();
+			toast.success(`Created ${count} bottles`);
+		} catch (err) {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to create bottles",
+			);
+		}
 	};
 
 	return (
