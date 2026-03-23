@@ -9,12 +9,12 @@ export async function register() {
 	) {
 		const email = process.env.DEFAULT_ADMIN_EMAIL || "admin@example.com";
 		const password = process.env.DEFAULT_ADMIN_PASSWORD || "change-me-owner";
-		const name = process.env.DEFAULT_ADMIN_NAME || "Admin";
+		const defaultAdminName = process.env.DEFAULT_ADMIN_NAME || "Admin";
 		const adminUserExist = (await db.$count(users)) > 0;
 		console.log("checking users");
 		if (!adminUserExist) {
 			await auth.api.signUpEmail({
-				body: { email, password, name: "Admin" },
+				body: { email, password, name: defaultAdminName },
 			});
 			await db
 				.update(users)

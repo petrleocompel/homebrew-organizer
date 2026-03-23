@@ -142,7 +142,9 @@ export default function PublicBottlePage() {
 									<div className="flex items-center gap-2">
 										<Calendar className="h-4 w-4 text-muted-foreground" />
 										<p className="text-sm">
-											{new Date(bottle.updated!).toLocaleDateString()}
+											{new Date(
+												bottle.updated ?? bottle.created,
+											).toLocaleDateString()}
 										</p>
 									</div>
 								</div>
@@ -211,7 +213,9 @@ export default function PublicBottlePage() {
 										<div className="flex items-center gap-2">
 											<Calendar className="h-4 w-4 text-muted-foreground" />
 											<p className="text-sm">
-												{new Date(batch.updated!).toLocaleDateString()}
+												{new Date(
+													batch.updated ?? batch.created,
+												).toLocaleDateString()}
 											</p>
 										</div>
 									</div>

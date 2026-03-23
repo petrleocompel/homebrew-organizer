@@ -10,11 +10,19 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { Bottle } from "@/lib/types";
+import type { BottleStatus } from "@/lib/types";
 import { api } from "@/trpc/react";
 
+interface AssignableBottle {
+	id: string;
+	bottleNumber: number;
+	status: BottleStatus;
+	label?: string | null;
+	currentBatchId?: string | null;
+}
+
 interface AssignBottleDialogProps {
-	availableBottles: Bottle[];
+	availableBottles: AssignableBottle[];
 	batchId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -81,6 +89,7 @@ export function AssignBottleDialog({
 					{availableBottles.map((bottle) => (
 						<Card
 							key={bottle.id}
+							data-testid="assign-bottle-card"
 							className="cursor-pointer transition-colors hover:border-primary/50"
 						>
 							<CardContent className="p-4">
@@ -93,7 +102,11 @@ export function AssignBottleDialog({
 											{bottle.status}
 										</Badge>
 									</div>
-									<Button size="sm" onClick={() => handleAssign(bottle.id)}>
+									<Button
+										size="sm"
+										data-testid="assign-bottle-button"
+										onClick={() => handleAssign(bottle.id)}
+									>
 										Assign
 									</Button>
 								</div>

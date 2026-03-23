@@ -63,7 +63,7 @@ export function CreateBatchDialog() {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button>
+				<Button data-testid="create-batch-trigger">
 					<Plus className="mr-2 h-4 w-4" />
 					New Batch
 				</Button>
@@ -142,7 +142,9 @@ export function CreateBatchDialog() {
 						>
 							Cancel
 						</Button>
-						<Button type="submit">Create Batch</Button>
+						<Button type="submit" data-testid="create-batch-submit">
+							Create Batch
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

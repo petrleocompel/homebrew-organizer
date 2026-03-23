@@ -32,17 +32,23 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 	const { data: batch } = api.batch.getById.useQuery({ id: batchId });
 	const { data: assignedBottles = [], refetch: refetchAssignedBottles } =
 		api.bottle.getByBatchId.useQuery({ batchId });
-	const { data: allBottles = [] } = api.bottle.getAll.useQuery();
+	const { data: allBottles = [], refetch: refetchAllBottles } =
+		api.bottle.getAll.useQuery();
+
+	const refreshBottleData = () => {
+		refetchAssignedBottles();
+		refetchAllBottles();
+	};
 
 	const unassignMutation = api.bottle.unassignFromBatch.useMutation({
 		onSuccess: () => {
-			refetchAssignedBottles();
+			refreshBottleData();
 		},
 	});
 
 	const deleteMutation = api.bottle.delete.useMutation({
 		onSuccess: () => {
-			refetchAssignedBottles();
+			refreshBottleData();
 		},
 	});
 
@@ -66,7 +72,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 
 	const handleAssign = () => {
 		setShowAssignDialog(false);
-		refetchAssignedBottles();
+		refreshBottleData();
 	};
 
 	if (!batch) {
@@ -77,9 +83,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 		);
 	}
 
-	const availableBottles: Bottle[] = allBottles.filter(
-		(b) => !b.currentBatchId,
-	) as any as Bottle[];
+	const availableBottles = allBottles.filter((b) => !b.currentBatchId);
 
 	return (
 		<div className="space-y-6">
@@ -115,12 +119,18 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 				<div>
 					<h2 className="font-semibold text-xl">Bottles in this Batch</h2>
 					<p className="text-muted-foreground text-sm">
-						{assignedBottles.length} bottles assigned
+						<span data-testid="assigned-bottle-count">
+							{assignedBottles.length} bottles assigned
+						</span>
 					</p>
 				</div>
 				<div className="flex gap-2">
-					<CreateBottleDialog onCreated={refetchAssignedBottles} />
-					<Button variant="outline" onClick={() => setShowAssignDialog(true)}>
+					<CreateBottleDialog onCreated={refreshBottleData} />
+					<Button
+						variant="outline"
+						data-testid="assign-existing-bottle-trigger"
+						onClick={() => setShowAssignDialog(true)}
+					>
 						<Plus className="mr-2 h-4 w-4" />
 						Assign Existing
 					</Button>
@@ -134,7 +144,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 							No bottles assigned to this batch yet
 						</p>
 						<div className="flex gap-2">
-							<CreateBottleDialog onCreated={refetchAssignedBottles} />
+							<CreateBottleDialog onCreated={refreshBottleData} />
 							<Button
 								variant="outline"
 								onClick={() => setShowAssignDialog(true)}
@@ -149,6 +159,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 					{assignedBottles.map((bottle) => (
 						<Card
 							key={bottle.id}
+							data-testid="assigned-bottle-card"
 							className="transition-colors hover:border-primary/50"
 						>
 							<CardHeader>
@@ -212,7 +223,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 					bottle={editingBottle as Omit<Bottle, "created" | "updated">}
 					open={!!editingBottle}
 					onOpenChange={(open) => !open && setEditingBottle(null)}
-					onSave={refetchAssignedBottles}
+					onSave={refreshBottleData}
 					onDelete={handleDelete}
 				/>
 			)}

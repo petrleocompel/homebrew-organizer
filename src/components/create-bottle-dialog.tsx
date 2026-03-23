@@ -56,7 +56,7 @@ export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button>
+				<Button data-testid="create-bottle-trigger">
 					<Plus className="mr-2 h-4 w-4" />
 					New Bottle
 				</Button>
@@ -96,7 +96,9 @@ export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
 						>
 							Cancel
 						</Button>
-						<Button type="submit">Create Bottle</Button>
+						<Button type="submit" data-testid="create-bottle-submit">
+							Create Bottle
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

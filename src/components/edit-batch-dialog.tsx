@@ -60,12 +60,12 @@ export function EditBatchDialog({
 		e.preventDefault();
 
 		await updateMutation.mutateAsync({
-			id: batch.id!,
-			batchNumber: batch.batchNumber!,
-			name: formData.name!,
-			description: formData.description!,
-			note: formData.note!,
-			status: formData.status!,
+			id: batch.id,
+			batchNumber: batch.batchNumber,
+			name: formData.name,
+			description: formData.description,
+			note: formData.note,
+			status: formData.status,
 		});
 
 		onSave();
@@ -145,7 +145,9 @@ export function EditBatchDialog({
 						>
 							Cancel
 						</Button>
-						<Button type="submit">Save Changes</Button>
+						<Button type="submit" data-testid="edit-batch-submit">
+							Save Changes
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

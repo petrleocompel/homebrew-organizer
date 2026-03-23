@@ -125,6 +125,10 @@ export const bottleRouter = createTRPCRouter({
 				})
 				.where(eq(bottles.id, input.bottleId));
 
+			await ctx.db
+				.delete(batchBottles)
+				.where(eq(batchBottles.bottleId, input.bottleId));
+
 			return { success: true };
 		}),
 });

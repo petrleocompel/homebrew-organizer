@@ -75,6 +75,7 @@ export function BatchList() {
 				{batches.map((batch) => (
 					<Card
 						key={batch.id}
+						data-testid="admin-batch-card"
 						className="transition-colors hover:border-primary/50"
 					>
 						<CardHeader>
@@ -111,6 +112,8 @@ export function BatchList() {
 								<Button
 									variant="outline"
 									size="sm"
+									aria-label={`Edit batch ${batch.name}`}
+									data-testid="admin-batch-edit"
 									onClick={() =>
 										setEditingBatch({
 											...batch,
@@ -124,6 +127,8 @@ export function BatchList() {
 								<Button
 									variant="outline"
 									size="sm"
+									aria-label={`Delete batch ${batch.name}`}
+									data-testid="admin-batch-delete"
 									onClick={() => handleDelete(batch.id)}
 								>
 									<Trash2 className="h-4 w-4" />

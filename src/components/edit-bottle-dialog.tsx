@@ -45,7 +45,7 @@ export function EditBottleDialog({
 		setStatus(bottle.status);
 	}, [bottle]);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
 		const updatedBottle: Omit<Bottle, "created" | "updated"> = {
@@ -53,7 +53,7 @@ export function EditBottleDialog({
 			status,
 		};
 
-		updateMutation.mutate(updatedBottle);
+		await updateMutation.mutateAsync(updatedBottle);
 		onSave();
 		onOpenChange(false);
 	};
@@ -105,7 +105,9 @@ export function EditBottleDialog({
 							>
 								Cancel
 							</Button>
-							<Button type="submit">Save Changes</Button>
+							<Button type="submit" data-testid="edit-bottle-submit">
+								Save Changes
+							</Button>
 						</div>
 					</DialogFooter>
 				</form>
