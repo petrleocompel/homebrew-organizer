@@ -53,18 +53,28 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 		.getByTestId("assign-bottle-card")
 		.filter({ hasText: "#1004" })
 		.first()
-		.getByTestId("assign-bottle-button")
+		.getByTestId("assign-bottle-toggle")
 		.click();
+	await page
+		.getByTestId("assign-bottle-card")
+		.filter({ hasText: "#1002" })
+		.first()
+		.getByTestId("assign-bottle-toggle")
+		.click();
+	await page.getByTestId("assign-bottles-submit").click();
 	await expect(
 		page.getByRole("heading", { name: "Assign Bottle to Batch" }),
 	).not.toBeVisible();
 
 	await expect(page.getByTestId("assigned-bottle-count")).toContainText(
-		"2 bottles assigned",
+		"3 bottles assigned",
 	);
 
 	const createdBottleCard = assignedBottleCard(page, "#1004");
 	await expect(createdBottleCard).toBeVisible();
+	await expect(
+		assignedBottleCard(page, seedData.bottles.unassignedOne.label),
+	).toBeVisible();
 
 	const seededAssignedCard = assignedBottleCard(
 		page,
@@ -94,7 +104,7 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 	await seededAssignedCard.getByRole("button", { name: "Remove" }).click();
 	await expect(seededAssignedCard).not.toBeVisible();
 	await expect(page.getByTestId("assigned-bottle-count")).toContainText(
-		"1 bottles assigned",
+		"2 bottles assigned",
 	);
 
 	await page.goto("/admin/bottles");
@@ -114,8 +124,9 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 		.getByTestId("assign-bottle-card")
 		.filter({ hasText: "#1002" })
 		.first()
-		.getByTestId("assign-bottle-button")
+		.getByTestId("assign-bottle-toggle")
 		.click();
+	await page.getByTestId("assign-bottles-submit").click();
 
 	await expect(
 		page.getByRole("heading", { name: "Assign Bottle to Batch" }),

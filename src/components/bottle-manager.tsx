@@ -70,7 +70,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 		}
 	};
 
-	const handleAssign = () => {
+	const handleAssign = (_bottleIds: string[]) => {
 		setShowAssignDialog(false);
 		refreshBottleData();
 	};

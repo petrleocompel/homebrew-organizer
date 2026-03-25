@@ -115,6 +115,33 @@ export const bottleRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
+	assignManyToBatch: protectedProcedure
+		.input(
+			z.object({
+				bottleIds: z.array(z.string()).min(1),
+				batchId: z.string(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			await Promise.all(
+				input.bottleIds.map(async (bottleId) => {
+					await ctx.db
+						.update(bottles)
+						.set({
+							currentBatchId: input.batchId,
+						})
+						.where(eq(bottles.id, bottleId));
+
+					await ctx.db.insert(batchBottles).values({
+						batchId: input.batchId,
+						bottleId,
+					});
+				}),
+			);
+
+			return { success: true };
+		}),
+
 	unassignFromBatch: protectedProcedure
 		.input(z.object({ bottleId: z.string() }))
 		.mutation(async ({ ctx, input }) => {
