@@ -63,7 +63,6 @@
 		"@trpc/client": "^11.9.0",
 		"@trpc/react-query": "^11.9.0",
 		"@trpc/server": "^11.9.0",
-		"@vercel/analytics": "^1.6.1",
 		"ajv": "^8.20.0",
 		"autoprefixer": "^10.4.24",
 		"better-auth": "^1.6.25",

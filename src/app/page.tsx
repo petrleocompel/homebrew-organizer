@@ -1,5 +1,6 @@
 import { Beer, LogIn } from "lucide-react";
 import Link from "next/link";
+import { PublicFooter } from "@/components/public-footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function PublicHomePage() {
 	const batches = await listPublicBatches();
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="flex min-h-screen flex-col bg-background">
 			<header className="border-border border-b bg-card">
 				<div className="container mx-auto flex items-center justify-between px-4 py-6">
 					<div className="flex items-center gap-3">
@@ -38,7 +39,7 @@ export default async function PublicHomePage() {
 				</div>
 			</header>
 
-			<main className="container mx-auto px-4 py-8">
+			<main className="container mx-auto flex-1 px-4 py-8">
 				{batches.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-center">
 						<Beer className="mb-4 h-10 w-10 text-muted-foreground" />
@@ -84,6 +85,7 @@ export default async function PublicHomePage() {
 					</div>
 				)}
 			</main>
+			<PublicFooter />
 		</div>
 	);
 }

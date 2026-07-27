@@ -1,6 +1,7 @@
 import { Beer, ChevronLeft, Package } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PublicFooter } from "@/components/public-footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +23,7 @@ export default async function PublicBatchPage(props: {
 	if (!batch) notFound();
 
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="flex min-h-screen flex-col bg-background">
 			<header className="border-border border-b bg-card">
 				<div className="container mx-auto flex items-center gap-4 px-4 py-6">
 					<Button variant="ghost" size="sm" asChild>
@@ -43,7 +44,7 @@ export default async function PublicBatchPage(props: {
 				</div>
 			</header>
 
-			<main className="container mx-auto max-w-4xl space-y-6 px-4 py-8">
+			<main className="container mx-auto max-w-4xl flex-1 space-y-6 px-4 py-8">
 				<Card>
 					<CardHeader>
 						<div className="flex flex-wrap gap-2">
@@ -95,6 +96,7 @@ export default async function PublicBatchPage(props: {
 					</CardContent>
 				</Card>
 			</main>
+			<PublicFooter />
 		</div>
 	);
 }

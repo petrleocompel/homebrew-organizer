@@ -2,6 +2,7 @@ import { Beer, CalendarDays, History, PackageCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PublicFooter } from "@/components/public-footer";
 import { Badge } from "@/components/ui/badge";
 import {
 	Card,
@@ -42,7 +43,7 @@ export default async function PublicBottlePage(props: {
 	if (!bottle) notFound();
 
 	return (
-		<div className="min-h-screen bg-muted/20">
+		<div className="flex min-h-screen flex-col bg-muted/20">
 			<header className="border-border border-b bg-card">
 				<div className="container mx-auto flex items-center justify-between px-4 py-5">
 					<Link href="/" className="flex items-center gap-3">
@@ -60,7 +61,7 @@ export default async function PublicBottlePage(props: {
 				</div>
 			</header>
 
-			<main className="container mx-auto max-w-3xl space-y-6 px-4 py-8">
+			<main className="container mx-auto max-w-3xl flex-1 space-y-6 px-4 py-8">
 				<Card>
 					<CardHeader>
 						<CardDescription>Bottle #{bottle.bottleNumber}</CardDescription>
@@ -158,6 +159,7 @@ export default async function PublicBottlePage(props: {
 					</CardContent>
 				</Card>
 			</main>
+			<PublicFooter />
 		</div>
 	);
 }

@@ -25,8 +25,10 @@ export const env = createEnv({
 			.int()
 			.positive()
 			.default(10_485_760),
-		APPLE_TEAM_ID: z.string().min(1).optional(),
-		APPLE_BUNDLE_ID: z.string().min(1).default("com.example.HomebrewScan"),
+		APPLE_TEAM_ID: z.literal("ABCDE12345").default("ABCDE12345"),
+		APPLE_BUNDLE_ID: z
+			.literal("com.example.homebrew-scan")
+			.default("com.example.homebrew-scan"),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
