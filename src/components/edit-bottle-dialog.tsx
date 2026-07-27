@@ -28,7 +28,7 @@ interface EditBottleDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSave: () => void;
-	onDelete: (id: string) => void;
+	onRetire: (id: string) => void;
 }
 
 export function EditBottleDialog({
@@ -36,7 +36,7 @@ export function EditBottleDialog({
 	open,
 	onOpenChange,
 	onSave,
-	onDelete,
+	onRetire,
 }: EditBottleDialogProps) {
 	const [status, setStatus] = useState(bottle.status);
 	const updateMutation = api.bottle.update.useMutation();
@@ -90,12 +90,12 @@ export function EditBottleDialog({
 							type="button"
 							variant="destructive"
 							onClick={() => {
-								onDelete(bottle.id);
+								onRetire(bottle.id);
 								onOpenChange(false);
 							}}
 							className="sm:mr-auto"
 						>
-							Delete Bottle
+							Retire Bottle
 						</Button>
 						<div className="flex gap-2">
 							<Button

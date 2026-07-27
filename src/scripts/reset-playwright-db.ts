@@ -4,21 +4,21 @@ import { getPlaywrightDatabaseUrl, loadEnvFile } from "./playwright-env";
 
 export async function resetPlaywrightDb() {
 	loadEnvFile();
-
 	const sql = postgres(getPlaywrightDatabaseUrl(), { max: 1 });
-
 	try {
-		await sql.unsafe(`
-			TRUNCATE TABLE
-				ho_batch_bottles,
-				ho_bottles,
-				ho_batches,
-				ho_account,
-				ho_session,
-				ho_verification,
-				ho_user
-			RESTART IDENTITY CASCADE
-		`);
+		const tables = await sql<{ tablename: string }[]>`
+			SELECT tablename
+			FROM pg_tables
+			WHERE schemaname = 'public'
+				AND tablename LIKE 'ho_%'
+			ORDER BY tablename
+		`;
+		if (tables.length > 0) {
+			const quoted = tables
+				.map(({ tablename }) => `"${tablename.replaceAll('"', '""')}"`)
+				.join(", ");
+			await sql.unsafe(`TRUNCATE TABLE ${quoted} RESTART IDENTITY CASCADE`);
+		}
 	} finally {
 		await sql.end();
 	}

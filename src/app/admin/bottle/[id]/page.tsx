@@ -4,9 +4,13 @@ import {
 	Beer,
 	Calendar,
 	ChevronLeft,
+	Download,
+	ExternalLink,
+	History,
 	Info,
 	LoaderIcon,
 	Pencil,
+	QrCode,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -25,18 +29,22 @@ import { Separator } from "@/components/ui/separator";
 import type { Bottle } from "@/lib/types";
 import { api } from "@/trpc/react";
 
-const bottleStatusColors = {
+const bottleStatusColors: Record<string, string> = {
 	empty: "bg-muted text-muted-foreground",
 	filled: "bg-chart-4 text-primary-foreground",
 	conditioning: "bg-chart-2 text-primary-foreground",
 	ready: "bg-chart-1 text-primary-foreground",
 };
 
-const batchStatusColors = {
+const batchStatusColors: Record<string, string> = {
 	planning: "bg-secondary text-secondary-foreground",
 	brewing: "bg-chart-4 text-primary-foreground",
 	fermenting: "bg-chart-2 text-primary-foreground",
 	bottled: "bg-chart-1 text-primary-foreground",
+	packaging: "bg-chart-1 text-primary-foreground",
+	conditioning: "bg-chart-2 text-primary-foreground",
+	ready: "bg-chart-1 text-primary-foreground",
+	archived: "bg-muted text-muted-foreground",
 	completed: "bg-muted text-muted-foreground",
 };
 
@@ -53,12 +61,14 @@ export default function AdminBottlePage() {
 		isLoading,
 		refetch,
 	} = api.bottle.getById.useQuery({ id });
+	const { data: detail, refetch: refetchDetail } =
+		api.bottle.getDetail.useQuery({ id });
 	const { data: batch, isFetched: isBatchLoaded } = api.batch.getById.useQuery(
 		{ id: bottle?.currentBatchId ?? "" },
 		{ enabled: !!bottle?.currentBatchId },
 	);
-	const deleteMutation = api.bottle.delete.useMutation({
-		onSuccess: () => router.push("/admin"),
+	const retireMutation = api.bottle.delete.useMutation({
+		onSuccess: () => router.push("/admin/bottles"),
 	});
 
 	if (isLoading) {
@@ -91,7 +101,7 @@ export default function AdminBottlePage() {
 				<div className="container mx-auto px-4 py-6">
 					<div className="flex items-center gap-4">
 						<Button variant="ghost" size="sm" asChild>
-							<Link href="/admin" className="h-16">
+							<Link href="/admin/bottles" className="h-16">
 								<ChevronLeft className="h-8 w-8" />
 							</Link>
 						</Button>
@@ -116,6 +126,7 @@ export default function AdminBottlePage() {
 									id: bottle.id,
 									status: bottle.status,
 									bottleNumber: bottle.bottleNumber,
+									label: bottle.label,
 									currentBatchId: bottle.currentBatchId ?? undefined,
 								})
 							}
@@ -183,6 +194,55 @@ export default function AdminBottlePage() {
 						</CardContent>
 					</Card>
 
+					{detail && (
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<QrCode className="h-5 w-5" />
+									Permanent QR identity
+								</CardTitle>
+								<CardDescription>
+									The opaque code remains with this physical bottle across
+									fills.
+								</CardDescription>
+							</CardHeader>
+							<CardContent className="space-y-4">
+								<div className="rounded-lg bg-muted/50 p-4">
+									<p className="text-muted-foreground text-xs">
+										Short public code
+									</p>
+									<p className="font-mono font-semibold">
+										{detail.publicCode.slice(0, 8)}
+									</p>
+								</div>
+								<div className="flex flex-wrap gap-2">
+									<Button variant="outline" size="sm" asChild>
+										<a
+											href={`/b/${detail.publicCode}`}
+											target="_blank"
+											rel="noreferrer"
+										>
+											<ExternalLink className="mr-2 h-4 w-4" />
+											Public page
+										</a>
+									</Button>
+									<Button variant="outline" size="sm" asChild>
+										<a href={`/api/v1/bottles/${id}/qr?format=svg`}>
+											<Download className="mr-2 h-4 w-4" />
+											Vector SVG
+										</a>
+									</Button>
+									<Button variant="outline" size="sm" asChild>
+										<a href={`/api/v1/bottles/${id}/qr?format=png&width=2048`}>
+											<Download className="mr-2 h-4 w-4" />
+											High-resolution PNG
+										</a>
+									</Button>
+								</div>
+							</CardContent>
+						</Card>
+					)}
+
 					{isBatchLoaded && batch && (
 						<Card>
 							<CardHeader>
@@ -212,6 +272,49 @@ export default function AdminBottlePage() {
 							</CardContent>
 						</Card>
 					)}
+
+					{detail && (
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<History className="h-5 w-5" />
+									Immutable event timeline
+								</CardTitle>
+								<CardDescription>
+									{detail.fills.length} retained fill
+									{detail.fills.length === 1 ? "" : "s"} ·{" "}
+									{detail.events.length} audited event
+									{detail.events.length === 1 ? "" : "s"}
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<div className="space-y-3">
+									{detail.events.map((event) => (
+										<div
+											key={event.id}
+											className="border-border border-l-2 pl-4"
+										>
+											<div className="flex flex-wrap items-center justify-between gap-2">
+												<p className="font-medium text-sm">{event.type}</p>
+												<Badge variant="outline">{event.source}</Badge>
+											</div>
+											<p className="text-muted-foreground text-xs">
+												{new Date(event.timestamp).toLocaleString()}
+												{event.actorUserId
+													? ` · actor ${event.actorUserId.slice(0, 8)}`
+													: ""}
+											</p>
+										</div>
+									))}
+									{detail.events.length === 0 && (
+										<p className="text-muted-foreground text-sm">
+											No events yet.
+										</p>
+									)}
+								</div>
+							</CardContent>
+						</Card>
+					)}
 				</div>
 			</main>
 
@@ -220,8 +323,11 @@ export default function AdminBottlePage() {
 					bottle={editingBottle}
 					open={!!editingBottle}
 					onOpenChange={(open) => !open && setEditingBottle(null)}
-					onSave={() => refetch()}
-					onDelete={(id) => deleteMutation.mutate({ id })}
+					onSave={() => {
+						void refetch();
+						void refetchDetail();
+					}}
+					onRetire={(id) => retireMutation.mutate({ id })}
 				/>
 			)}
 		</>

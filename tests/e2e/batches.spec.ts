@@ -12,7 +12,7 @@ test.beforeEach(() => {
 	resetSeedData();
 });
 
-test("creates, edits, and deletes a batch across admin and public views", async ({
+test("creates, edits, and archives a batch across admin and public views", async ({
 	page,
 }) => {
 	const createdName = uniqueName("PW Batch Created");
@@ -25,11 +25,14 @@ test("creates, edits, and deletes a batch across admin and public views", async 
 	await expect(
 		page.getByRole("heading", { name: "Create New Batch" }),
 	).toBeVisible();
+	await page.locator("#recipe-revision").click();
+	await page.getByRole("option", { name: /Playwright House Recipe/ }).click();
 	await page.getByLabel("Batch Name").fill(createdName);
 	await page
 		.getByLabel("Description")
 		.fill("Created in Playwright CRUD coverage");
 	await page.getByLabel("Notes").fill("Initial note from the E2E suite");
+	await selectRadixOption(page, page.locator("#visibility"), "Listed catalog");
 	await selectRadixOption(page, page.locator("#status"), "Brewing");
 	await page.getByTestId("create-batch-submit").click();
 	await expect(
@@ -45,6 +48,7 @@ test("creates, edits, and deletes a batch across admin and public views", async 
 	await createdCard.getByTestId("admin-batch-edit").click();
 	await expect(page.getByRole("heading", { name: /Edit Batch/ })).toBeVisible();
 	await page.getByLabel("Batch Name").fill(editedName);
+	await page.getByLabel("Public beer name").fill(editedName);
 	await page
 		.getByLabel("Description")
 		.fill("Edited in Playwright CRUD coverage");
@@ -66,7 +70,7 @@ test("creates, edits, and deletes a batch across admin and public views", async 
 
 	await page.goto("/admin");
 	await acceptNextDialog(page);
-	await editedCard.getByTestId("admin-batch-delete").click();
+	await editedCard.getByTestId("admin-batch-archive").click();
 	await expect(editedCard).not.toBeVisible();
 
 	await page.goto("/");

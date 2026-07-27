@@ -1,6 +1,9 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { batchRouter } from "./routers/batch";
 import { bottleRouter } from "./routers/bottle";
+import { labelRouter } from "./routers/label";
+import { recipeRouter } from "./routers/recipe";
+import { teamRouter } from "./routers/team";
 
 /**
  * This is the primary router for your server.
@@ -10,6 +13,9 @@ import { bottleRouter } from "./routers/bottle";
 export const appRouter = createTRPCRouter({
 	batch: batchRouter,
 	bottle: bottleRouter,
+	label: labelRouter,
+	recipe: recipeRouter,
+	team: teamRouter,
 });
 
 // export type definition of API

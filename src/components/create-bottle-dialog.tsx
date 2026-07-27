@@ -13,15 +13,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import type { BottleStatus } from "@/lib/types";
 import { api } from "@/trpc/react";
 
 interface CreateBottleDialogProps {
@@ -30,25 +21,13 @@ interface CreateBottleDialogProps {
 
 export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
 	const [open, setOpen] = useState(false);
-	const [status, setStatus] = useState<BottleStatus>("empty");
-
-	const { data: bottles = [] } = api.bottle.getAll.useQuery();
-	const createMutation = api.bottle.create.useMutation();
+	const createMutation = api.bottle.createRange.useMutation();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		const maxBottleNumber = bottles.reduce(
-			(max, b) => Math.max(max, b.bottleNumber),
-			0,
-		);
+		await createMutation.mutateAsync({ count: 1 });
 
-		await createMutation.mutateAsync({
-			status,
-			bottleNumber: maxBottleNumber + 1,
-		});
-
-		setStatus("empty");
 		setOpen(false);
 		onCreated();
 	};
@@ -69,25 +48,10 @@ export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
 							Add a new bottle to your inventory
 						</DialogDescription>
 					</DialogHeader>
-					<div className="grid gap-4 py-4">
-						<div className="grid gap-2">
-							<Label htmlFor="status">Initial Status</Label>
-							<Select
-								value={status}
-								onValueChange={(value) => setStatus(value as BottleStatus)}
-							>
-								<SelectTrigger id="status">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="empty">Empty</SelectItem>
-									<SelectItem value="filled">Filled</SelectItem>
-									<SelectItem value="conditioning">Conditioning</SelectItem>
-									<SelectItem value="ready">Ready</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
+					<p className="py-6 text-muted-foreground text-sm">
+						The server assigns the next bottle number and a permanent public QR
+						code. The new bottle starts available.
+					</p>
 					<DialogFooter>
 						<Button
 							type="button"
@@ -96,7 +60,11 @@ export function CreateBottleDialog({ onCreated }: CreateBottleDialogProps) {
 						>
 							Cancel
 						</Button>
-						<Button type="submit" data-testid="create-bottle-submit">
+						<Button
+							type="submit"
+							data-testid="create-bottle-submit"
+							disabled={createMutation.isPending}
+						>
 							Create Bottle
 						</Button>
 					</DialogFooter>

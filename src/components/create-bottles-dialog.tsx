@@ -1,9 +1,8 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -16,15 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { BottleStatus } from "@/lib/types";
 import { api } from "@/trpc/react";
 
 interface CreateBottlesDialogProps {
@@ -33,79 +23,22 @@ interface CreateBottlesDialogProps {
 
 export function CreateBottlesDialog({ onCreated }: CreateBottlesDialogProps) {
 	const [open, setOpen] = useState(false);
+	const [count, setCount] = useState(10);
+	const createRange = api.bottle.createRange.useMutation();
+	const valid = Number.isInteger(count) && count >= 1 && count <= 500;
 
-	const { data: bottles = [] } = api.bottle.getAll.useQuery();
-	const createManyMutation = api.bottle.createMany.useMutation();
-
-	const maxBottleNumber = bottles.reduce(
-		(max, b) => Math.max(max, b.bottleNumber),
-		0,
-	);
-
-	// Numeric tab state
-	const [fromNum, setFromNum] = useState(maxBottleNumber + 1);
-	const [toNum, setToNum] = useState(maxBottleNumber + 10);
-	const [numericStatus, setNumericStatus] = useState<BottleStatus>("empty");
-
-	// GUID tab state
-	const [guidCount, setGuidCount] = useState(3);
-	const [guidStatus, setGuidStatus] = useState<BottleStatus>("empty");
-	const [guidPreviews, setGuidPreviews] = useState<string[]>([]);
-
-	useEffect(() => {
-		setFromNum(maxBottleNumber + 1);
-		setToNum(maxBottleNumber + 10);
-	}, [maxBottleNumber]);
-
-	useEffect(() => {
-		const count = Math.max(1, Math.min(100, guidCount));
-		setGuidPreviews(Array.from({ length: count }, () => crypto.randomUUID()));
-	}, [guidCount]);
-
-	const existingNumbers = new Set(bottles.map((b) => b.bottleNumber));
-
-	const numericRange: number[] = [];
-	for (let n = fromNum; n <= toNum; n++) {
-		numericRange.push(n);
-	}
-	const numericConflicts = numericRange.filter((n) => existingNumbers.has(n));
-	const numericValid =
-		fromNum <= toNum &&
-		numericConflicts.length === 0 &&
-		numericRange.length > 0;
-
-	const handleNumericSubmit = async () => {
+	const handleSubmit = async () => {
+		if (!valid) return;
 		try {
-			await createManyMutation.mutateAsync(
-				numericRange.map((n) => ({ bottleNumber: n, status: numericStatus })),
-			);
+			const created = await createRange.mutateAsync({ count });
 			setOpen(false);
 			onCreated();
-			toast.success(`Created ${numericRange.length} bottles`);
-		} catch (err) {
-			toast.error(
-				err instanceof Error ? err.message : "Failed to create bottles",
+			toast.success(
+				`Created ${created.length} bottle${created.length === 1 ? "" : "s"}`,
 			);
-		}
-	};
-
-	const handleGuidSubmit = async () => {
-		const count = Math.max(1, Math.min(100, guidCount));
-		const nextMax = maxBottleNumber;
-		try {
-			await createManyMutation.mutateAsync(
-				guidPreviews.slice(0, count).map((uuid, i) => ({
-					bottleNumber: nextMax + i + 1,
-					status: guidStatus,
-					label: uuid,
-				})),
-			);
-			setOpen(false);
-			onCreated();
-			toast.success(`Created ${count} bottles`);
-		} catch (err) {
+		} catch (error) {
 			toast.error(
-				err instanceof Error ? err.message : "Failed to create bottles",
+				error instanceof Error ? error.message : "Failed to create bottles",
 			);
 		}
 	};
@@ -118,175 +51,45 @@ export function CreateBottlesDialog({ onCreated }: CreateBottlesDialogProps) {
 					Create Bottles
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[520px]">
+			<DialogContent className="sm:max-w-[460px]">
 				<DialogHeader>
-					<DialogTitle>Create Bottles</DialogTitle>
+					<DialogTitle>Create bottle range</DialogTitle>
 					<DialogDescription>
-						Create multiple bottles at once using a numeric range or UUID
-						labels.
+						The server allocates consecutive bottle numbers safely and gives
+						every bottle a permanent public QR code.
 					</DialogDescription>
 				</DialogHeader>
-
-				<Tabs defaultValue="numeric" className="mt-2">
-					<TabsList className="w-full">
-						<TabsTrigger value="numeric" className="flex-1">
-							Numeric
-						</TabsTrigger>
-						<TabsTrigger value="guid" className="flex-1">
-							GUID
-						</TabsTrigger>
-					</TabsList>
-
-					<TabsContent value="numeric" className="space-y-4 pt-4">
-						<div className="grid grid-cols-2 gap-4">
-							<div className="grid gap-2">
-								<Label htmlFor="from">From</Label>
-								<Input
-									id="from"
-									type="number"
-									min={1}
-									value={fromNum}
-									onChange={(e) => setFromNum(Number(e.target.value))}
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="to">To</Label>
-								<Input
-									id="to"
-									type="number"
-									min={fromNum}
-									value={toNum}
-									onChange={(e) => setToNum(Number(e.target.value))}
-								/>
-							</div>
-						</div>
-						<div className="grid gap-2">
-							<Label>Status</Label>
-							<Select
-								value={numericStatus}
-								onValueChange={(v) => setNumericStatus(v as BottleStatus)}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="empty">Empty</SelectItem>
-									<SelectItem value="filled">Filled</SelectItem>
-									<SelectItem value="conditioning">Conditioning</SelectItem>
-									<SelectItem value="ready">Ready</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						{numericRange.length > 0 && (
-							<div>
-								<p className="mb-2 text-muted-foreground text-sm">
-									Preview ({numericRange.length} bottles)
-								</p>
-								<div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto">
-									{numericRange.map((n) => (
-										<Badge
-											key={n}
-											variant={
-												existingNumbers.has(n) ? "destructive" : "outline"
-											}
-											className="font-mono"
-										>
-											#{n}
-										</Badge>
-									))}
-								</div>
-								{numericConflicts.length > 0 && (
-									<p className="mt-1 text-destructive text-xs">
-										Conflicts with existing bottles:{" "}
-										{numericConflicts.map((n) => `#${n}`).join(", ")}
-									</p>
-								)}
-							</div>
-						)}
-						<DialogFooter>
-							<Button
-								variant="outline"
-								onClick={() => setOpen(false)}
-								type="button"
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={handleNumericSubmit}
-								disabled={!numericValid || createManyMutation.isPending}
-								type="button"
-							>
-								Create {numericRange.length > 0 ? numericRange.length : ""}{" "}
-								Bottles
-							</Button>
-						</DialogFooter>
-					</TabsContent>
-
-					<TabsContent value="guid" className="space-y-4 pt-4">
-						<div className="grid gap-2">
-							<Label htmlFor="count">Count (1–100)</Label>
-							<Input
-								id="count"
-								type="number"
-								min={1}
-								max={100}
-								value={guidCount}
-								onChange={(e) => setGuidCount(Number(e.target.value))}
-							/>
-						</div>
-						<div className="grid gap-2">
-							<Label>Status</Label>
-							<Select
-								value={guidStatus}
-								onValueChange={(v) => setGuidStatus(v as BottleStatus)}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="empty">Empty</SelectItem>
-									<SelectItem value="filled">Filled</SelectItem>
-									<SelectItem value="conditioning">Conditioning</SelectItem>
-									<SelectItem value="ready">Ready</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						<div>
-							<p className="mb-2 text-muted-foreground text-sm">
-								Preview ({Math.max(1, Math.min(100, guidCount))} UUIDs)
-							</p>
-							<div className="flex max-h-28 flex-col gap-1 overflow-y-auto">
-								{guidPreviews
-									.slice(0, Math.max(1, Math.min(100, guidCount)))
-									.map((uuid) => (
-										<Badge
-											key={uuid}
-											variant="outline"
-											className="font-mono text-xs"
-										>
-											{uuid}
-										</Badge>
-									))}
-							</div>
-						</div>
-						<DialogFooter>
-							<Button
-								variant="outline"
-								onClick={() => setOpen(false)}
-								type="button"
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={handleGuidSubmit}
-								disabled={createManyMutation.isPending}
-								type="button"
-							>
-								Create {Math.max(1, Math.min(100, guidCount))} Bottles
-							</Button>
-						</DialogFooter>
-					</TabsContent>
-				</Tabs>
+				<div className="grid gap-2 py-5">
+					<Label htmlFor="bottle-count">Number of bottles</Label>
+					<Input
+						id="bottle-count"
+						type="number"
+						min={1}
+						max={500}
+						value={count}
+						onChange={(event) => setCount(Number(event.target.value))}
+					/>
+					<p className="text-muted-foreground text-xs">
+						Each new physical bottle starts available. Fill state is recorded
+						only when it is assigned to a batch.
+					</p>
+				</div>
+				<DialogFooter>
+					<Button
+						variant="outline"
+						onClick={() => setOpen(false)}
+						type="button"
+					>
+						Cancel
+					</Button>
+					<Button
+						onClick={handleSubmit}
+						disabled={!valid || createRange.isPending}
+						type="button"
+					>
+						Create {valid ? count : ""} Bottle{count === 1 ? "" : "s"}
+					</Button>
+				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);

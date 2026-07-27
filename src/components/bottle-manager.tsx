@@ -17,11 +17,12 @@ import { AssignBottleDialog } from "./assign-bottle-dialog";
 import { CreateBottleDialog } from "./create-bottle-dialog";
 import { EditBottleDialog } from "./edit-bottle-dialog";
 
-const bottleStatusColors = {
+const bottleStatusColors: Record<string, string> = {
 	empty: "bg-muted text-muted-foreground",
 	filled: "bg-chart-4 text-primary-foreground",
 	conditioning: "bg-chart-2 text-primary-foreground",
 	ready: "bg-chart-1 text-primary-foreground",
+	emptied: "bg-muted text-muted-foreground",
 };
 
 interface BottleManagerProps {
@@ -46,7 +47,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 		},
 	});
 
-	const deleteMutation = api.bottle.delete.useMutation({
+	const retireMutation = api.bottle.delete.useMutation({
 		onSuccess: () => {
 			refreshBottleData();
 		},
@@ -64,9 +65,11 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 		}
 	};
 
-	const handleDelete = (bottleId: string) => {
-		if (confirm("Are you sure you want to delete this bottle?")) {
-			deleteMutation.mutate({ id: bottleId });
+	const handleRetire = (bottleId: string) => {
+		if (
+			confirm("Retire this physical bottle? Its history will be preserved.")
+		) {
+			retireMutation.mutate({ id: bottleId });
 		}
 	};
 
@@ -120,7 +123,8 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 					<h2 className="font-semibold text-xl">Bottles in this Batch</h2>
 					<p className="text-muted-foreground text-sm">
 						<span data-testid="assigned-bottle-count">
-							{assignedBottles.length} bottles assigned
+							{assignedBottles.length} bottle
+							{assignedBottles.length === 1 ? "" : "s"} assigned
 						</span>
 					</p>
 				</div>
@@ -185,7 +189,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 										className="flex-1 bg-transparent"
 									>
 										<a
-											href={`/bottle/${bottle.id}`}
+											href={`/b/${bottle.publicCode}`}
 											target="_blank"
 											rel="noopener noreferrer"
 										>
@@ -224,7 +228,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 					open={!!editingBottle}
 					onOpenChange={(open) => !open && setEditingBottle(null)}
 					onSave={refreshBottleData}
-					onDelete={handleDelete}
+					onRetire={handleRetire}
 				/>
 			)}
 

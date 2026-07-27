@@ -7,6 +7,11 @@ export const playwrightSeed = {
 		password: "change-me-owner",
 		name: "Admin",
 	},
+	viewer: {
+		email: "viewer@example.com",
+		password: "change-me-viewer",
+		name: "Viewer",
+	},
 	batches: {
 		amberAle: {
 			batchNumber: 101,
@@ -47,47 +52,129 @@ export async function seedPlaywrightData() {
 	loadEnvFile();
 	process.env.DATABASE_URL = getPlaywrightDatabaseUrl();
 
-	const [{ auth }, { db, dbConnection }, { batchBottles, batches, bottles }] =
-		await Promise.all([
-			import("@/server/auth"),
-			import("@/server/db"),
-			import("@/server/db/schema"),
-		]);
+	const [
+		{ auth },
+		{ db, dbConnection },
+		{ batches, breweryMembers },
+		{ createBottles, assignFill },
+		{ createRecipeRevision },
+	] = await Promise.all([
+		import("@/server/auth"),
+		import("@/server/db"),
+		import("@/server/db/schema"),
+		import("@/server/services/bottle-service"),
+		import("@/server/services/recipe-service"),
+	]);
 
 	try {
-		const [amberAleBatch] = await db
-			.insert(batches)
-			.values([playwrightSeed.batches.amberAle, playwrightSeed.batches.stout])
-			.returning();
-
-		const [assignedBottle] = await db
-			.insert(bottles)
-			.values([
-				{
-					...playwrightSeed.bottles.assigned,
-					currentBatchId: amberAleBatch?.id,
-				},
-				playwrightSeed.bottles.unassignedOne,
-				playwrightSeed.bottles.unassignedTwo,
-			])
-			.returning();
-
-		if (!amberAleBatch || !assignedBottle) {
-			throw new Error("Playwright seed data insert failed.");
-		}
-
-		await db.insert(batchBottles).values({
-			batchId: amberAleBatch.id,
-			bottleId: assignedBottle.id,
-		});
-
-		await auth.api.signUpEmail({
+		const signUp = await auth.api.signUpEmail({
 			body: {
 				email: playwrightSeed.admin.email,
 				password: playwrightSeed.admin.password,
 				name: playwrightSeed.admin.name,
 			},
 		});
+		const viewerSignUp = await auth.api.signUpEmail({
+			body: {
+				email: playwrightSeed.viewer.email,
+				password: playwrightSeed.viewer.password,
+				name: playwrightSeed.viewer.name,
+			},
+		});
+		await db.insert(breweryMembers).values([
+			{
+				userId: signUp.user.id,
+				role: "owner",
+			},
+			{
+				userId: viewerSignUp.user.id,
+				role: "viewer",
+			},
+		]);
+
+		const recipeRevision = await createRecipeRevision({
+			name: "Playwright House Recipe",
+			actorUserId: signUp.user.id,
+			revisionMessage: "Initial deterministic E2E fixture",
+			beerJson: {
+				beerjson: {
+					version: 1,
+					recipes: [
+						{
+							name: "Playwright House Recipe",
+							type: "all grain",
+							author: "Homebrew Organizer",
+							batch_size: { unit: "l", value: 20 },
+							efficiency: {
+								brewhouse: { unit: "%", value: 72 },
+							},
+							ingredients: { fermentable_additions: [] },
+						},
+					],
+				},
+			},
+		});
+
+		const [amberAleBatch] = await db
+			.insert(batches)
+			.values([
+				{
+					...playwrightSeed.batches.amberAle,
+					publicName: playwrightSeed.batches.amberAle.name,
+					publicDescription: playwrightSeed.batches.amberAle.description,
+					privateNotes: playwrightSeed.batches.amberAle.note,
+					visibility: "listed" as const,
+					recipeRevisionId: recipeRevision.id,
+				},
+				{
+					...playwrightSeed.batches.stout,
+					publicName: playwrightSeed.batches.stout.name,
+					publicDescription: playwrightSeed.batches.stout.description,
+					privateNotes: playwrightSeed.batches.stout.note,
+					visibility: "listed" as const,
+					recipeRevisionId: recipeRevision.id,
+				},
+			])
+			.returning();
+		if (!amberAleBatch) throw new Error("Playwright batch insert failed.");
+
+		const createdBottles = await createBottles(
+			[
+				{
+					...playwrightSeed.bottles.assigned,
+					displayName: playwrightSeed.bottles.assigned.label,
+					legacyLabel: playwrightSeed.bottles.assigned.label,
+					legacyStatus: playwrightSeed.bottles.assigned.status,
+				},
+				{
+					...playwrightSeed.bottles.unassignedOne,
+					displayName: playwrightSeed.bottles.unassignedOne.label,
+					legacyLabel: playwrightSeed.bottles.unassignedOne.label,
+					legacyStatus: playwrightSeed.bottles.unassignedOne.status,
+				},
+				{
+					...playwrightSeed.bottles.unassignedTwo,
+					displayName: playwrightSeed.bottles.unassignedTwo.label,
+					legacyLabel: playwrightSeed.bottles.unassignedTwo.label,
+					legacyStatus: playwrightSeed.bottles.unassignedTwo.status,
+				},
+			],
+			signUp.user.id,
+		);
+		const assignedBottle = createdBottles[0];
+		if (!assignedBottle) throw new Error("Playwright bottle insert failed.");
+		await db.transaction((tx) =>
+			assignFill(
+				tx,
+				{
+					bottleId: assignedBottle.id,
+					batchId: amberAleBatch.id,
+					status: "conditioning",
+				},
+				signUp.user.id,
+				"web",
+			),
+		);
 	} finally {
 		await dbConnection.end();
 	}

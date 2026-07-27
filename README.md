@@ -1,125 +1,154 @@
 # Homebrew Organizer
 
-A web app for tracking homebrew batches and bottles through their full lifecycle — from planning a brew to having a ready bottle in hand.
+Homebrew Organizer is the authoritative system for recipes, batches, reusable
+bottles, permanent QR identities, label generation, team access, and audit
+history. The browser uses tRPC while the native Homebrew Scan app uses the
+versioned REST API under `/api/v1`.
 
-## Features
+## What is included
 
-- Track **batches** through lifecycle stages: `planning → brewing → fermenting → bottled → completed`
-- Track **bottles** through states: `empty → filled → conditioning → ready`
-- Many-to-many relationship between batches and bottles
-- **Public read-only views** for batches and bottles (shareable links)
-- **Admin area** with full CRUD, protected by email/password authentication
-
-## Routes
-
-| Path                 | Access    | Description                             |
-| -------------------- | --------- | --------------------------------------- |
-| `/`                  | Public    | Read-only list of all batches           |
-| `/batch/[id]`        | Public    | Batch details + assigned bottles        |
-| `/bottle/[id]`       | Public    | Individual bottle status                |
-| `/admin`             | Protected | Batch management (create, edit, delete) |
-| `/admin/batch/[id]`  | Protected | Bottle management for a batch           |
-| `/admin/bottle/[id]` | Protected | Individual bottle edit                  |
-| `/sign-in`           | Public    | Admin sign-in                           |
+- Versioned BeerJSON 1.0 recipes with BeerJSON and BeerXML import/export.
+- Batches pinned to immutable recipe revisions, lifecycle events, and
+  unit-aware measurements.
+- Reusable physical bottles with server-assigned numbers, permanent opaque QR
+  identities, legacy aliases, fill history, retirement, and QR rotation.
+- Curated public bottle pages at `/b/{publicCode}` and permanent redirects from
+  legacy `/bottle/{locator}` links.
+- Owner, Brewer, Cellar, and Viewer roles; invitation-only membership; bearer
+  authentication for the native client; and mutation audit events.
+- PDF label templates, QR/text overlays, duplicate-print protection, exact
+  80 × 80 mm multipage PDFs, and ZIP/CSV exports.
+- An OpenAPI 3.1 contract used to generate the Swift client during an Xcode
+  build.
 
 ## Stack
 
-- **[Next.js 16](https://nextjs.org)** — App Router, React Server Components
-- **[tRPC](https://trpc.io)** — end-to-end type-safe API
-- **[Drizzle ORM](https://orm.drizzle.team)** — schema, migrations, queries
-- **[PostgreSQL](https://www.postgresql.org)** — database
-- **[better-auth](https://www.better-auth.com)** — email/password authentication
-- **[Tailwind CSS v4](https://tailwindcss.com)** + **[shadcn/ui](https://ui.shadcn.com)** — styling
+- Next.js 16, React 19, tRPC, and Tailwind CSS
+- PostgreSQL, Drizzle ORM, and additive SQL migrations
+- Better Auth with session and bearer authentication
+- Vitest and Playwright
+- `pdf-lib`, Noto Sans, and vector QR generation
 
-## Local Development
+## Main routes
 
-### Prerequisites
+| Path | Access | Purpose |
+| --- | --- | --- |
+| `/` | Public | Listed batch catalog |
+| `/batch/{id}` | Public | Curated public batch detail |
+| `/b/{publicCode}` | Public | Canonical bottle page and public fill history |
+| `/bottle/{locator}` | Public | Permanent legacy redirect |
+| `/admin` | Team | Dashboard |
+| `/admin/batches` | Team | Batch lifecycle and measurements |
+| `/admin/recipes` | Brewer+ | Recipe revisions and interchange |
+| `/admin/bottles` | Team | Bottle inventory and fill operations |
+| `/admin/labels` | Brewer+ | Label templates and print runs |
+| `/admin/team` | Owner | Memberships, invitations, and activity |
+| `/api/v1/*` | Mixed | Versioned native-client API |
+| `/.well-known/apple-app-site-association` | Public | Universal Link association |
 
-- Node.js 20+
-- Docker or Podman (for the local database)
+The committed API contract is
+[`openapi/homebrew-v1.yaml`](openapi/homebrew-v1.yaml).
 
-### Setup
+## Local development
+
+Requirements:
+
+- Node.js 24 and npm 11
+- PostgreSQL 18, or Docker/Podman for the supplied development helper
+
+Set up a fresh checkout:
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Copy the example env file and fill in your values
-cp .env.example .env   # or create .env manually — see Environment Variables below
-
-# 3. Start the local PostgreSQL container
+npm install --legacy-peer-deps
+cp .env.example .env
 ./start-database.sh
-
-# 4. Push the schema to the database
-npm run db:push
-
-# 5. Seed the admin user
+npm run db:migrate
 npm run db:seed-admin
-
-# 6. Start the dev server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The admin area is at [http://localhost:3000/admin](http://localhost:3000/admin).
+Open `http://127.0.0.1:3000`. Registration is closed; the explicit seed command
+creates or restores the bootstrap Owner membership.
 
-## Environment Variables
+The dependency install currently uses `--legacy-peer-deps` because Better
+Auth's optional adapters expose peer ranges that npm otherwise attempts to
+resolve even though those adapters are not used by this application.
 
-Create a `.env` file in the project root:
+## Upgrading an existing database
 
-```env
-# PostgreSQL connection string (required)
-DATABASE_URL=postgresql://postgres:password@localhost:5432/homebrew-organizer
-
-# better-auth secret — any random string (required in production, optional in dev)
-BETTER_AUTH_SECRET=your-secret-here
-
-# Public URL of the app (required in production)
-BETTER_AUTH_URL=https://your-domain.com
-```
-
-## Scripts
-
-| Command                 | Description                              |
-| ----------------------- | ---------------------------------------- |
-| `npm run dev`           | Start dev server with Turbopack          |
-| `npm run build`         | Production build                         |
-| `npm run typecheck`     | TypeScript type check                    |
-| `npm run check`         | Biome lint + format check                |
-| `npm run check:write`   | Biome auto-fix (safe)                    |
-| `npm run db:push`       | Push schema directly to DB (dev)         |
-| `npm run db:generate`   | Generate Drizzle migration files         |
-| `npm run db:migrate`    | Run pending migrations                   |
-| `npm run db:studio`     | Open Drizzle Studio GUI                  |
-| `npm run db:seed-admin` | Create the default admin user            |
-| `./start-database.sh`   | Start local PostgreSQL via Docker/Podman |
-
-## Database
-
-Schema is defined in `src/server/db/schema.ts`. Tables are prefixed with `ho_` to support multi-project databases.
-
-**Key tables:**
-
-- `ho_batches` — brewing batches
-- `ho_bottles` — physical bottles
-- `ho_batch_bottles` — batch ↔ bottle assignments
-- `ho_user/session/account/verification` — better-auth tables
-
-For development, use `db:push` to sync the schema without migrations. For production, generate and run migrations with `db:generate` + `db:migrate`.
-
-## Deployment
-
-The app ships as a Docker image.
+Back up PostgreSQL before applying migrations. The migration is additive and
+retains the compatibility columns for one release.
 
 ```bash
-# Build the image
+npm run db:migration-preflight
+npm run db:migrate
+```
+
+The read-only preflight reports duplicate bottle or batch numbers and the
+missing numeric bottles in the legacy 11–30 range. Resolve duplicates before
+running the migration. The migration then creates permanent public codes and
+aliases, supplies missing 11–30 bottles, and converts current and historical
+assignments into fills and events.
+
+After migration, verify every legacy label from 11 through 30 and take a second
+backup before eventually removing compatibility columns in a later release.
+
+## Environment
+
+See [`.env.example`](.env.example) for the complete list. The important
+variables are:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection |
+| `BETTER_AUTH_SECRET` | Better Auth signing secret |
+| `BETTER_AUTH_URL` | Authentication origin |
+| `PUBLIC_APP_URL` | Canonical QR and public-link origin |
+| `ALLOWED_QR_HOSTS` | Comma-separated QR host allowlist |
+| `RECIPE_UPLOAD_MAX_BYTES` | Recipe upload limit |
+| `PDF_UPLOAD_MAX_BYTES` | Label artwork upload limit |
+| `APPLE_TEAM_ID` | Optional AASA team identifier |
+| `APPLE_BUNDLE_ID` | Homebrew Scan bundle identifier |
+
+Deployment and bootstrap credentials currently remain tracked in this
+repository by project decision. Treat access to the repository as access to
+those credentials.
+
+## Tests and checks
+
+```bash
+npm run check
+npm run typecheck
+npm run test:unit
+npm run build
+npm run test:e2e:install
+npm run test:e2e
+npm audit --omit=dev
+```
+
+Playwright requires a disposable PostgreSQL database configured through
+`PLAYWRIGHT_DATABASE_URL`. Its preparation step creates the named database,
+applies the schema, clears existing `ho_*` data, and seeds Owner and Viewer
+fixtures. Never point it at a database containing useful data.
+
+The API E2E suite covers public-data privacy, bearer authentication, role
+boundaries, idempotency and concurrent assignment, recipe interchange, label
+preflight, exact page dimensions, and downloadable PDF/ZIP output.
+
+## Docker and rollout
+
+Build the standalone application image with:
+
+```bash
 docker build -t homebrew-organizer .
-
-# Or use the compose file (adjust env vars first)
-docker compose up -d
 ```
 
-After the first deploy, run the admin seed:
+Database migrations are an explicit pre-deployment step and are not run by
+application startup. A safe rollout is:
 
-```bash
-docker compose exec app npm run db:seed-admin
-```
+1. Back up PostgreSQL.
+2. Run the migration preflight and migrations from the checked-out release.
+3. Deploy the application image.
+4. Verify canonical and legacy bottle links.
+5. Print and physically scan a sample 80 × 80 mm label.
+6. Distribute the matching Homebrew Scan build through TestFlight.

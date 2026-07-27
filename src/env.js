@@ -13,6 +13,20 @@ export const env = createEnv({
 				: z.string().optional(),
 		BETTER_AUTH_URL: z.string().url().optional(),
 		DATABASE_URL: z.string().url(),
+		PUBLIC_APP_URL: z.string().url().default("https://brew.example.com"),
+		ALLOWED_QR_HOSTS: z.string().default("brew.example.com"),
+		RECIPE_UPLOAD_MAX_BYTES: z.coerce
+			.number()
+			.int()
+			.positive()
+			.default(5_242_880),
+		PDF_UPLOAD_MAX_BYTES: z.coerce
+			.number()
+			.int()
+			.positive()
+			.default(10_485_760),
+		APPLE_TEAM_ID: z.string().min(1).optional(),
+		APPLE_BUNDLE_ID: z.string().min(1).default("com.example.HomebrewScan"),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
@@ -35,6 +49,12 @@ export const env = createEnv({
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
 		DATABASE_URL: process.env.DATABASE_URL,
+		PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
+		ALLOWED_QR_HOSTS: process.env.ALLOWED_QR_HOSTS,
+		RECIPE_UPLOAD_MAX_BYTES: process.env.RECIPE_UPLOAD_MAX_BYTES,
+		PDF_UPLOAD_MAX_BYTES: process.env.PDF_UPLOAD_MAX_BYTES,
+		APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
+		APPLE_BUNDLE_ID: process.env.APPLE_BUNDLE_ID,
 		NODE_ENV: process.env.NODE_ENV,
 	},
 	/**

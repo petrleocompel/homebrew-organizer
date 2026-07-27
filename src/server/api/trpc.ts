@@ -8,11 +8,18 @@
  */
 
 import { initTRPC, TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { breweryMembers } from "@/server/db/schema";
+import { isDomainError } from "@/server/domain/errors";
+import {
+	type Permission,
+	roleHasPermission,
+} from "@/server/domain/permissions";
 
 /**
  * 1. CONTEXT
@@ -28,10 +35,21 @@ import { db } from "@/server/db";
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
 	const session = await auth.api.getSession({ headers: opts.headers });
+	const membership = session?.user
+		? (
+				await db
+					.select()
+					.from(breweryMembers)
+					.where(eq(breweryMembers.userId, session.user.id))
+					.limit(1)
+			)[0]
+		: undefined;
 
 	return {
 		db,
 		session,
+		membership,
+		requestId: opts.headers.get("x-request-id") ?? crypto.randomUUID(),
 		...opts,
 	};
 };
@@ -84,7 +102,7 @@ export const createTRPCRouter = t.router;
  * You can remove this if you don't like it, but it can help catch unwanted waterfalls by simulating
  * network latency that would occur in production but not in local development.
  */
-const timingMiddleware = t.middleware(async ({ next, path }) => {
+const timingMiddleware = t.middleware(async ({ next, path, ctx }) => {
 	const start = Date.now();
 
 	if (t._config.isDev) {
@@ -96,9 +114,39 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 	const result = await next();
 
 	const end = Date.now();
-	console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+	console.log(
+		JSON.stringify({
+			level: "info",
+			type: "trpc_request",
+			path,
+			durationMs: end - start,
+			requestId: ctx.requestId,
+			actorUserId: ctx.session?.user.id ?? null,
+		}),
+	);
 
 	return result;
+});
+
+const domainErrorMiddleware = t.middleware(async ({ next }) => {
+	try {
+		return await next();
+	} catch (error) {
+		if (!isDomainError(error)) throw error;
+		const code =
+			error.status === 401
+				? "UNAUTHORIZED"
+				: error.status === 403
+					? "FORBIDDEN"
+					: error.status === 404
+						? "NOT_FOUND"
+						: error.status === 409
+							? "CONFLICT"
+							: error.status === 413
+								? "PAYLOAD_TOO_LARGE"
+								: "BAD_REQUEST";
+		throw new TRPCError({ code, message: error.message, cause: error });
+	}
 });
 
 /**
@@ -108,7 +156,9 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure.use(timingMiddleware);
+export const publicProcedure = t.procedure
+	.use(timingMiddleware)
+	.use(domainErrorMiddleware);
 
 /**
  * Protected (authenticated) procedure
@@ -120,14 +170,35 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  */
 export const protectedProcedure = t.procedure
 	.use(timingMiddleware)
+	.use(domainErrorMiddleware)
 	.use(({ ctx, next }) => {
 		if (!ctx.session?.user) {
 			throw new TRPCError({ code: "UNAUTHORIZED" });
+		}
+		if (!ctx.membership || ctx.membership.disabledAt) {
+			throw new TRPCError({ code: "FORBIDDEN" });
 		}
 		return next({
 			ctx: {
 				// infers the `session` as non-nullable
 				session: { ...ctx.session, user: ctx.session.user },
+				membership: ctx.membership,
 			},
 		});
 	});
+
+function procedureWithPermission(permission: Permission) {
+	return protectedProcedure.use(({ ctx, next }) => {
+		if (!roleHasPermission(ctx.membership.role, permission)) {
+			throw new TRPCError({ code: "FORBIDDEN" });
+		}
+		return next({ ctx });
+	});
+}
+
+export const viewerProcedure = protectedProcedure;
+export const cellarProcedure = procedureWithPermission("bottle:fill");
+export const brewerProcedure = procedureWithPermission("batch:manage");
+export const recipeProcedure = procedureWithPermission("recipe:manage");
+export const labelProcedure = procedureWithPermission("label:manage");
+export const ownerProcedure = procedureWithPermission("team:manage");

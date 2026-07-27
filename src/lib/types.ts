@@ -3,6 +3,10 @@ export type BatchStatus =
 	| "brewing"
 	| "fermenting"
 	| "bottled"
+	| "packaging"
+	| "conditioning"
+	| "ready"
+	| "archived"
 	| "completed";
 export type BottleStatus = "empty" | "filled" | "conditioning" | "ready";
 
@@ -13,8 +17,14 @@ export interface Batch {
 	description: string;
 	note: string;
 	status: BatchStatus;
-	created: string;
-	updated: string;
+	publicName?: string | null;
+	publicDescription?: string | null;
+	privateNotes?: string | null;
+	visibility?: "private" | "unlisted" | "listed";
+	styleName?: string | null;
+	abv?: string | null;
+	created: string | Date;
+	updated: string | Date;
 }
 
 export interface Bottle {
@@ -22,9 +32,10 @@ export interface Bottle {
 	status: BottleStatus;
 	bottleNumber: number;
 	label?: string | null;
+	publicCode?: string | null;
 	currentBatchId?: string;
-	created: string;
-	updated: string;
+	created: string | Date;
+	updated: string | Date;
 }
 
 export interface BatchBottle {

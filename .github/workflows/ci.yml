@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: organizer-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: homebrew_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d homebrew_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:password@127.0.0.1:5432/homebrew_ci
+      PLAYWRIGHT_DATABASE_URL: postgresql://postgres:password@127.0.0.1:5432/homebrew_playwright
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+      BETTER_AUTH_SECRET: organizer-ci-only-secret-with-at-least-32-characters
+      BETTER_AUTH_URL: http://127.0.0.1:3000
+      PUBLIC_APP_URL: http://127.0.0.1:3000
+      ALLOWED_QR_HOSTS: brew.example.com,127.0.0.1,localhost
+      RECIPE_UPLOAD_MAX_BYTES: 5242880
+      PDF_UPLOAD_MAX_BYTES: 10485760
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Apply database migrations
+        run: npm run db:migrate
+
+      - name: Verify migration preflight
+        run: npm run db:migration-preflight
+
+      - name: Check formatting and lint
+        run: npm run check
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser and API tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7

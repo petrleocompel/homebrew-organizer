@@ -28,12 +28,13 @@ test("renders public home, batch, and bottle pages from seeded data", async ({
 	await page
 		.getByRole("link", { name: new RegExp(seedData.bottles.assigned.label) })
 		.click();
-	await expect(page).toHaveURL(/\/bottle\//);
+	await expect(page).toHaveURL(/\/b\/[a-z2-7]{26}$/);
 	await expect(
 		page.getByRole("heading", {
-			name: `Bottle ${seedData.bottles.assigned.label}`,
+			name: seedData.bottles.assigned.label,
 		}),
 	).toBeVisible();
-	await expect(page.getByText("Current Batch")).toBeVisible();
-	await expect(page.getByText(seedData.batches.amberAle.name)).toBeVisible();
+	await expect(
+		page.getByText(seedData.batches.amberAle.name).first(),
+	).toBeVisible();
 });

@@ -29,14 +29,13 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 	await expect(page.getByText(seedData.batches.amberAle.name)).toBeVisible();
 
 	await expect(page.getByTestId("assigned-bottle-count")).toContainText(
-		"1 bottles assigned",
+		"1 bottle assigned",
 	);
 
 	await page.getByTestId("create-bottle-trigger").click();
 	await expect(
 		page.getByRole("heading", { name: "Create New Bottle" }),
 	).toBeVisible();
-	await selectRadixOption(page, page.locator("#status"), "Ready");
 	await page.getByTestId("create-bottle-submit").click();
 	await expect(
 		page.getByRole("heading", { name: "Create New Bottle" }),
@@ -57,7 +56,7 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 		.click();
 	await page
 		.getByTestId("assign-bottle-card")
-		.filter({ hasText: "#1002" })
+		.filter({ hasText: seedData.bottles.unassignedOne.label })
 		.first()
 		.getByTestId("assign-bottle-toggle")
 		.click();
@@ -96,8 +95,10 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 		createdBottleCard.getByRole("link", { name: "View Public" }).click(),
 	]);
 	await publicBottlePage.waitForLoadState("domcontentloaded");
-	await expect(publicBottlePage).toHaveURL(/\/bottle\//);
-	await expect(publicBottlePage.getByText("ready")).toBeVisible();
+	await expect(publicBottlePage).toHaveURL(/\/b\/[a-z2-7]{26}$/);
+	await expect(
+		publicBottlePage.getByText("conditioning", { exact: true }).first(),
+	).toBeVisible();
 	await publicBottlePage.close();
 
 	await acceptNextDialog(page);
@@ -110,9 +111,8 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 	await page.goto("/admin/bottles");
 	await expect(page.getByText(seedData.bottles.assigned.label)).toBeVisible();
 	const inventoryCard = page
-		.getByText(seedData.bottles.assigned.label)
-		.locator("..")
-		.locator("..");
+		.getByTestId("inventory-bottle-card")
+		.filter({ hasText: seedData.bottles.assigned.label });
 	await expect(inventoryCard).toContainText("Unassigned");
 
 	await page.goBack();
@@ -122,7 +122,7 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 	).toBeVisible();
 	await page
 		.getByTestId("assign-bottle-card")
-		.filter({ hasText: "#1002" })
+		.filter({ hasText: seedData.bottles.assigned.label })
 		.first()
 		.getByTestId("assign-bottle-toggle")
 		.click();
@@ -133,7 +133,7 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 	).not.toBeVisible();
 	const reassignedBottleCard = assignedBottleCard(
 		page,
-		seedData.bottles.unassignedOne.label,
+		seedData.bottles.assigned.label,
 	);
 	await expect(reassignedBottleCard).toBeVisible();
 
@@ -149,7 +149,8 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 			name: new RegExp(seedData.bottles.unassignedOne.label),
 		})
 		.click();
-	await expect(page).toHaveURL(/\/bottle\//);
-	await expect(page.getByText("Current Batch")).toBeVisible();
-	await expect(page.getByText(seedData.batches.amberAle.name)).toBeVisible();
+	await expect(page).toHaveURL(/\/b\/[a-z2-7]{26}$/);
+	await expect(
+		page.getByText(seedData.batches.amberAle.name).first(),
+	).toBeVisible();
 });

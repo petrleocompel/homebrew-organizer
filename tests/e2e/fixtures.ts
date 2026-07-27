@@ -23,12 +23,14 @@ export function resetSeedData() {
 }
 
 export async function loginAsAdmin(page: Page) {
-	await page.goto("/sign-in");
+	await page.goto("/sign-in", { waitUntil: "networkidle" });
 	await page.getByLabel("Email").fill(adminCredentials.email);
 	await page.getByLabel("Password").fill(adminCredentials.password);
 	await page.getByRole("button", { name: "Sign in" }).click();
 	await expect(page).toHaveURL(/\/admin$/);
-	await expect(page.getByText("Admin area")).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: "Dashboard", exact: true }),
+	).toBeVisible();
 }
 
 export async function acceptNextDialog(page: Page) {

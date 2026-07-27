@@ -1,0 +1,960 @@
+openapi: 3.1.0
+info:
+  title: Homebrew Organizer API
+  version: 1.0.0
+  description: Stable REST contract used by Homebrew Scan.
+servers:
+  - url: https://brew.example.com
+    description: Production
+  - url: http://127.0.0.1:3000
+    description: Local development
+tags:
+  - name: Authentication
+  - name: Public
+  - name: Batches
+  - name: Bottles
+  - name: Recipes
+  - name: Labels
+paths:
+  /api/auth/sign-in/email:
+    post:
+      tags: [Authentication]
+      operationId: signIn
+      summary: Sign in with a team email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInRequest"
+      responses:
+        "200":
+          description: Authenticated; persist the set-auth-token header in Keychain.
+          headers:
+            set-auth-token:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/v1/public/bottles/{code}:
+    get:
+      tags: [Public]
+      operationId: getPublicBottle
+      summary: Get the curated public state and timeline for a permanent bottle QR
+      parameters:
+        - $ref: "#/components/parameters/PublicCode"
+      responses:
+        "200":
+          description: Curated public bottle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicBottle"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/me:
+    get:
+      tags: [Authentication]
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current member, permissions, and capabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/batches:
+    get:
+      tags: [Batches]
+      operationId: listBatches
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assignable
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: A page of batches
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/bottles/by-code/{code}:
+    get:
+      tags: [Bottles]
+      operationId: getAuthenticatedBottleByCode
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PublicCode"
+      responses:
+        "200":
+          description: Private bottle metadata and complete retained history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticatedBottle"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/bottles/{id}/fills:
+    post:
+      tags: [Bottles]
+      operationId: createBottleFill
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InternalId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFillRequest"
+      responses:
+        "201":
+          description: Bottle assigned and filled
+          headers:
+            idempotency-replayed:
+              schema:
+                type: boolean
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FillMutationResult"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Invalid"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/fills/{id}/transition:
+    post:
+      tags: [Bottles]
+      operationId: transitionFill
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InternalId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionFillRequest"
+      responses:
+        "200":
+          description: Fill transitioned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FillMutationResult"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/fills/{id}/empty:
+    post:
+      tags: [Bottles]
+      operationId: emptyFill
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InternalId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyFillRequest"
+      responses:
+        "200":
+          description: Fill closed; bottle is available again
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FillMutationResult"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/bottles/{id}/reassign:
+    post:
+      tags: [Bottles]
+      operationId: reassignBottle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InternalId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReassignBottleRequest"
+      responses:
+        "201":
+          description: Existing fill closed and replacement fill created atomically
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FillMutationResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/recipes/import:
+    post:
+      tags: [Recipes]
+      operationId: importRecipes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: Required when commit is true.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeImportRequest"
+      responses:
+        "200":
+          description: Validation preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeImportPreview"
+        "201":
+          description: Selected valid recipes committed atomically
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+        "413":
+          $ref: "#/components/responses/TooLarge"
+        "422":
+          $ref: "#/components/responses/Invalid"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/recipes/{id}/export:
+    get:
+      tags: [Recipes]
+      operationId: exportRecipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InternalId"
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [beerjson, beerxml]
+      responses:
+        "200":
+          description: BeerJSON 1.0 or BeerXML 1.0 file
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+            application/xml:
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/print-runs:
+    post:
+      tags: [Labels]
+      operationId: createPrintRuns
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePrintRunRequest"
+      responses:
+        "201":
+          description: One or more runs of at most 500 labels
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [runs]
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PrintRun"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/print-runs/{id}/download:
+    get:
+      tags: [Labels]
+      operationId: downloadPrintRun
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InternalId"
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [pdf, zip]
+      responses:
+        "200":
+          description: Exact 80 × 80 mm multipage PDF or per-label ZIP with manifest
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    PublicCode:
+      name: code
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z2-7]{26}$"
+    InternalId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Forbidden:
+      description: Role does not permit the operation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    NotFound:
+      description: Resource not found; revoked and unknown QR codes are indistinguishable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Conflict:
+      description: Domain or idempotency conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Invalid:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    TooLarge:
+      description: Upload too large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+  schemas:
+    SignInRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    BreweryRole:
+      type: string
+      enum: [owner, brewer, cellar, viewer]
+    BottleState:
+      type: string
+      enum: [available, in_use, retired]
+    FillStatus:
+      type: string
+      enum: [filled, conditioning, ready, emptied]
+    BatchStatus:
+      type: string
+      enum:
+        - planning
+        - brewing
+        - fermenting
+        - packaging
+        - conditioning
+        - ready
+        - completed
+        - archived
+    BatchVisibility:
+      type: string
+      enum: [private, unlisted, listed]
+    PublicFillSummary:
+      type: object
+      required:
+        - beerName
+        - batchNumber
+        - style
+        - abv
+        - status
+        - filledAt
+        - expectedReadyAt
+        - readyAt
+        - emptiedAt
+      properties:
+        beerName:
+          type: [string, "null"]
+        batchNumber:
+          type: [integer, "null"]
+        style:
+          type: [string, "null"]
+        abv:
+          type: [number, "null"]
+        status:
+          $ref: "#/components/schemas/FillStatus"
+        filledAt:
+          type: string
+          format: date-time
+        expectedReadyAt:
+          type: [string, "null"]
+          format: date-time
+        readyAt:
+          type: [string, "null"]
+          format: date-time
+        emptiedAt:
+          type: [string, "null"]
+          format: date-time
+        historyApproximate:
+          type: boolean
+    PublicBottle:
+      type: object
+      required:
+        - bottleNumber
+        - displayName
+        - state
+        - timeline
+        - serverTimestamp
+      properties:
+        bottleNumber:
+          type: integer
+        displayName:
+          type: [string, "null"]
+        state:
+          $ref: "#/components/schemas/BottleState"
+        currentFill:
+          $ref: "#/components/schemas/PublicFillSummary"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFillSummary"
+        serverTimestamp:
+          type: string
+          format: date-time
+    BottleEvent:
+      type: object
+      required:
+        - id
+        - type
+        - fillId
+        - batchId
+        - actorUserId
+        - source
+        - visibility
+        - timestamp
+        - metadata
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        fillId:
+          type: [string, "null"]
+        batchId:
+          type: [string, "null"]
+        actorUserId:
+          type: [string, "null"]
+        source:
+          type: string
+          enum: [web, ios, migration]
+        visibility:
+          type: string
+          enum: [public, private]
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+    AuthenticatedFill:
+      type: object
+      required:
+        - id
+        - batchId
+        - batchNumber
+        - beerName
+        - status
+        - filledAt
+        - expectedReadyAt
+        - readyAt
+        - emptiedAt
+        - privateNotes
+        - historyApproximate
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+        batchNumber:
+          type: integer
+        beerName:
+          type: string
+        status:
+          $ref: "#/components/schemas/FillStatus"
+        filledAt:
+          type: string
+          format: date-time
+        expectedReadyAt:
+          type: [string, "null"]
+          format: date-time
+        readyAt:
+          type: [string, "null"]
+          format: date-time
+        emptiedAt:
+          type: [string, "null"]
+          format: date-time
+        privateNotes:
+          type: [string, "null"]
+        historyApproximate:
+          type: boolean
+    AuthenticatedBottle:
+      type: object
+      required:
+        - id
+        - bottleNumber
+        - displayName
+        - volumeMl
+        - color
+        - closureType
+        - location
+        - privateNotes
+        - retiredAt
+        - state
+        - publicCode
+        - fills
+        - events
+        - serverTimestamp
+      properties:
+        id:
+          type: string
+        bottleNumber:
+          type: integer
+        displayName:
+          type: [string, "null"]
+        volumeMl:
+          type: integer
+        color:
+          type: [string, "null"]
+        closureType:
+          type: [string, "null"]
+        location:
+          type: [string, "null"]
+        privateNotes:
+          type: [string, "null"]
+        retiredAt:
+          type: [string, "null"]
+          format: date-time
+        state:
+          $ref: "#/components/schemas/BottleState"
+        publicCode:
+          type: string
+        currentFill:
+          $ref: "#/components/schemas/AuthenticatedFill"
+        fills:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthenticatedFill"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/BottleEvent"
+        serverTimestamp:
+          type: string
+          format: date-time
+    BatchSummary:
+      type: object
+      required:
+        - id
+        - batchNumber
+        - name
+        - publicName
+        - status
+        - visibility
+        - style
+        - abv
+        - assignable
+      properties:
+        id:
+          type: string
+        batchNumber:
+          type: integer
+        name:
+          type: string
+        publicName:
+          type: string
+        status:
+          $ref: "#/components/schemas/BatchStatus"
+        visibility:
+          $ref: "#/components/schemas/BatchVisibility"
+        style:
+          type: [string, "null"]
+        abv:
+          type: [number, "null"]
+        assignable:
+          type: boolean
+    BatchPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BatchSummary"
+        nextCursor:
+          type: [string, "null"]
+    ServerCapabilities:
+      type: object
+      required:
+        - apiVersion
+        - maxRecipeUploadBytes
+        - maxPdfUploadBytes
+        - maxRecipesPerImport
+        - maxStickersPerRun
+        - allowedQrHosts
+        - offlineMutations
+      properties:
+        apiVersion:
+          type: string
+          const: v1
+        maxRecipeUploadBytes:
+          type: integer
+        maxPdfUploadBytes:
+          type: integer
+        maxRecipesPerImport:
+          type: integer
+        maxStickersPerRun:
+          type: integer
+        allowedQrHosts:
+          type: array
+          items:
+            type: string
+        offlineMutations:
+          type: boolean
+          const: false
+    Me:
+      type: object
+      required: [user, role, permissions, capabilities]
+      properties:
+        user:
+          type: object
+          required: [id, name, email]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+        role:
+          $ref: "#/components/schemas/BreweryRole"
+        permissions:
+          type: array
+          items:
+            type: string
+        capabilities:
+          $ref: "#/components/schemas/ServerCapabilities"
+    CreateFillRequest:
+      type: object
+      required: [batchId]
+      properties:
+        batchId:
+          type: string
+        status:
+          type: string
+          enum: [filled, conditioning, ready]
+          default: conditioning
+        filledAt:
+          type: string
+          format: date-time
+        expectedReadyAt:
+          type: [string, "null"]
+          format: date-time
+        privateNotes:
+          type: [string, "null"]
+    TransitionFillRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [conditioning, ready]
+        at:
+          type: string
+          format: date-time
+    EmptyFillRequest:
+      type: object
+      properties:
+        emptiedAt:
+          type: string
+          format: date-time
+    ReassignBottleRequest:
+      allOf:
+        - $ref: "#/components/schemas/CreateFillRequest"
+        - type: object
+          properties:
+            emptiedAt:
+              type: string
+              format: date-time
+    FillMutationResult:
+      type: object
+      required: [bottleId, bottleNumber, bottleState, fill, serverTimestamp]
+      properties:
+        bottleId:
+          type: string
+        bottleNumber:
+          type: integer
+        bottleState:
+          $ref: "#/components/schemas/BottleState"
+        fill:
+          $ref: "#/components/schemas/AuthenticatedFill"
+        serverTimestamp:
+          type: string
+          format: date-time
+    RecipeImportRequest:
+      type: object
+      required: [fileName, content]
+      properties:
+        fileName:
+          type: string
+        content:
+          type: string
+        commit:
+          type: boolean
+          default: false
+        selectedIndexes:
+          type: array
+          items:
+            type: integer
+        revisionMessage:
+          type: [string, "null"]
+    RecipeImportPreview:
+      type: object
+      required: [format, checksum, items]
+      properties:
+        format:
+          type: string
+          enum: [beerjson, beerxml]
+        checksum:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            required: [index, name, valid, errors, warnings, document, extensions]
+            properties:
+              index:
+                type: integer
+              name:
+                type: string
+              valid:
+                type: boolean
+              errors:
+                type: array
+                items:
+                  type: string
+              warnings:
+                type: array
+                items:
+                  type: string
+              document:
+                type: object
+                additionalProperties: true
+              extensions:
+                type: object
+                additionalProperties: true
+    CreatePrintRunRequest:
+      type: object
+      required: [templateId, bottleIds]
+      properties:
+        templateId:
+          type: string
+        bottleIds:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          uniqueItems: true
+          items:
+            type: string
+        batchId:
+          type: [string, "null"]
+        confirmDuplicateIdentity:
+          type: boolean
+          default: false
+    PrintRun:
+      type: object
+      required:
+        - id
+        - templateVersionId
+        - batchId
+        - runNumber
+        - runCount
+        - itemCount
+        - duplicateIdentityConfirmed
+        - createdBy
+        - createdAt
+        - warnings
+      properties:
+        id:
+          type: string
+        templateVersionId:
+          type: string
+        batchId:
+          type: [string, "null"]
+        runNumber:
+          type: integer
+        runCount:
+          type: integer
+        itemCount:
+          type: integer
+        duplicateIdentityConfirmed:
+          type: boolean
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        warnings:
+          type: array
+          items:
+            type: string
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+            requestId:
+              type: string
+              format: uuid

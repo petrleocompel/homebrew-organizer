@@ -1,6 +1,6 @@
 "use client";
 
-import { Beer, ExternalLink, Pencil } from "lucide-react";
+import { Archive, Beer, ExternalLink, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CreateBottlesDialog } from "@/components/create-bottles-dialog";
@@ -30,8 +30,12 @@ export default function AdminBottlesPage() {
 	const { data: batches = [] } = api.batch.getAll.useQuery();
 
 	const [search, setSearch] = useState("");
-	const [statusFilter, setStatusFilter] = useState<BottleStatus | "all">("all");
+	const [statusFilter, setStatusFilter] = useState<
+		BottleStatus | "all" | "retired"
+	>("all");
 	const [batchFilter, setBatchFilter] = useState<string>("all");
+	const [selected, setSelected] = useState<string[]>([]);
+	const retireMutation = api.bottle.retire.useMutation();
 
 	const batchMap = useMemo(
 		() => new Map(batches.map((b) => [b.id, b])),
@@ -49,7 +53,9 @@ export default function AdminBottlesPage() {
 				if (!matchLabel && !matchNum) return false;
 			}
 
-			if (statusFilter !== "all" && bottle.status !== statusFilter)
+			if (statusFilter === "retired") {
+				if (!bottle.retiredAt) return false;
+			} else if (statusFilter !== "all" && bottle.status !== statusFilter)
 				return false;
 
 			if (batchFilter === "unassigned") {
@@ -61,6 +67,14 @@ export default function AdminBottlesPage() {
 			return true;
 		});
 	}, [bottles, search, statusFilter, batchFilter]);
+
+	const bulkRetire = async () => {
+		await Promise.all(
+			selected.map((id) => retireMutation.mutateAsync({ id, retired: true })),
+		);
+		setSelected([]);
+		await refetch();
+	};
 
 	return (
 		<div className="container mx-auto px-4 py-8">
@@ -83,7 +97,9 @@ export default function AdminBottlesPage() {
 				/>
 				<Select
 					value={statusFilter}
-					onValueChange={(v) => setStatusFilter(v as BottleStatus | "all")}
+					onValueChange={(v) =>
+						setStatusFilter(v as BottleStatus | "all" | "retired")
+					}
 				>
 					<SelectTrigger className="w-44">
 						<SelectValue placeholder="Status" />
@@ -94,6 +110,7 @@ export default function AdminBottlesPage() {
 						<SelectItem value="filled">Filled</SelectItem>
 						<SelectItem value="conditioning">Conditioning</SelectItem>
 						<SelectItem value="ready">Ready</SelectItem>
+						<SelectItem value="retired">Retired</SelectItem>
 					</SelectContent>
 				</Select>
 				<Select value={batchFilter} onValueChange={setBatchFilter}>
@@ -111,6 +128,21 @@ export default function AdminBottlesPage() {
 					</SelectContent>
 				</Select>
 			</div>
+
+			{selected.length > 0 && (
+				<div className="mb-4 flex items-center justify-between rounded-lg border bg-muted/40 p-3">
+					<p className="text-sm">{selected.length} bottles selected</p>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={bulkRetire}
+						disabled={retireMutation.isPending}
+					>
+						<Archive className="mr-2 h-4 w-4" />
+						Retire selected
+					</Button>
+				</div>
+			)}
 
 			<p className="mb-4 text-muted-foreground text-sm">
 				Showing {filtered.length} of {bottles.length} bottles
@@ -135,19 +167,38 @@ export default function AdminBottlesPage() {
 						return (
 							<Card
 								key={bottle.id}
+								data-testid="inventory-bottle-card"
 								className="transition-colors hover:border-primary/50"
 							>
 								<CardContent className="p-4">
 									<div className="mb-2 flex items-start justify-between gap-1">
-										<span className="max-w-[120px] truncate font-medium font-mono text-sm">
-											{label}
-										</span>
+										<label className="flex min-w-0 items-center gap-2">
+											<input
+												type="checkbox"
+												checked={selected.includes(bottle.id)}
+												onChange={(event) =>
+													setSelected((current) =>
+														event.target.checked
+															? [...current, bottle.id]
+															: current.filter((id) => id !== bottle.id),
+													)
+												}
+											/>
+											<span className="max-w-[100px] truncate font-medium font-mono text-sm">
+												{label}
+											</span>
+										</label>
 										<Badge className={bottleStatusColors[bottle.status]}>
-											{bottle.status}
+											{bottle.retiredAt ? "retired" : bottle.status}
 										</Badge>
 									</div>
 									<p className="mb-3 truncate text-muted-foreground text-xs">
 										{batch ? `${batch.name}` : "Unassigned"}
+									</p>
+									<p className="mb-3 text-muted-foreground text-xs">
+										{bottle.printCount
+											? `${bottle.printCount} label print${bottle.printCount === 1 ? "" : "s"}`
+											: "Never printed"}
 									</p>
 									<div className="flex gap-1">
 										<Button
@@ -167,7 +218,7 @@ export default function AdminBottlesPage() {
 											className="flex-1 bg-transparent"
 										>
 											<a
-												href={`/bottle/${bottle.id}`}
+												href={`/b/${bottle.publicCode}`}
 												target="_blank"
 												rel="noopener noreferrer"
 											>

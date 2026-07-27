@@ -5,8 +5,12 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-	{ label: "Batches", href: "/admin" },
+	{ label: "Dashboard", href: "/admin" },
+	{ label: "Batches", href: "/admin/batches" },
+	{ label: "Recipes", href: "/admin/recipes" },
 	{ label: "Bottles", href: "/admin/bottles" },
+	{ label: "Labels", href: "/admin/labels" },
+	{ label: "Team", href: "/admin/team" },
 ];
 
 export function AdminNav() {
@@ -14,7 +18,7 @@ export function AdminNav() {
 
 	return (
 		<nav className="border-border border-b bg-card">
-			<div className="container mx-auto flex gap-1 px-4">
+			<div className="container mx-auto flex gap-1 overflow-x-auto px-4">
 				{navLinks.map((link) => {
 					const isActive =
 						link.href === "/admin"

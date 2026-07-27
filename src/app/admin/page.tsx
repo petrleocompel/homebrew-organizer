@@ -1,4 +1,4 @@
-import { Beer } from "lucide-react";
+import { Beer, LayoutDashboard } from "lucide-react";
 import { BatchList } from "@/components/batch-list";
 import { CreateBatchDialog } from "@/components/create-batch-dialog";
 
@@ -13,11 +13,9 @@ export default function AdminHomePage() {
 								<Beer className="h-6 w-6 text-primary-foreground" />
 							</div>
 							<div>
-								<h1 className="text-balance font-bold text-2xl">
-									Homebrew Organizer
-								</h1>
+								<h1 className="text-balance font-bold text-2xl">Dashboard</h1>
 								<p className="text-muted-foreground text-sm">
-									Manage your brewing batches and bottles
+									Brewery status and recent batches
 								</p>
 							</div>
 						</div>
@@ -27,6 +25,12 @@ export default function AdminHomePage() {
 			</header>
 
 			<main className="container mx-auto px-4 py-8">
+				<div className="mb-6 flex items-center gap-2 text-muted-foreground">
+					<LayoutDashboard className="h-5 w-5" />
+					<span className="text-sm">
+						Mutations are audited; public data is curated separately.
+					</span>
+				</div>
 				<BatchList />
 			</main>
 		</div>

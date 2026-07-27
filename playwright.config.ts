@@ -48,7 +48,6 @@ export default defineConfig({
 	expect: {
 		timeout: 10_000,
 	},
-	globalSetup: "./tests/e2e/global.setup.ts",
 	use: {
 		baseURL,
 		trace: "on-first-retry",
@@ -56,7 +55,7 @@ export default defineConfig({
 		screenshot: "only-on-failure",
 	},
 	webServer: {
-		command: "npm run dev",
+		command: "npm run test:e2e:prepare && npm run dev",
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,

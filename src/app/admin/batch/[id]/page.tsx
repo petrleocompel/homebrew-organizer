@@ -1,5 +1,6 @@
 import { Beer, ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { BatchMeasurements } from "@/components/batch-measurements";
 import { BottleManager } from "@/components/bottle-manager";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,7 @@ export default async function AdminBatchBottlesPage(props: {
 				<div className="container mx-auto px-4 py-6">
 					<div className="flex items-center gap-4">
 						<Button variant="ghost" size="sm" asChild>
-							<Link href="/admin" className="h-16">
+							<Link href="/admin/batches" className="h-16">
 								<ChevronLeft className="h-8 w-8" />
 							</Link>
 						</Button>
@@ -34,8 +35,9 @@ export default async function AdminBatchBottlesPage(props: {
 				</div>
 			</header>
 
-			<main className="container mx-auto px-4 py-8">
+			<main className="container mx-auto space-y-6 px-4 py-8">
 				<BottleManager batchId={params.id} />
+				<BatchMeasurements batchId={params.id} />
 			</main>
 		</div>
 	);

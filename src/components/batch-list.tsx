@@ -1,6 +1,6 @@
 "use client";
 
-import { Bold as Bottle, LoaderIcon, Pencil, Trash2 } from "lucide-react";
+import { Archive, Bold as Bottle, LoaderIcon, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,15 @@ import type { Batch } from "@/lib/types";
 import { api } from "@/trpc/react";
 import { EditBatchDialog } from "./edit-batch-dialog";
 
-const statusColors = {
+const statusColors: Record<string, string> = {
 	planning: "bg-secondary text-secondary-foreground",
 	brewing: "bg-chart-4 text-primary-foreground",
 	fermenting: "bg-chart-2 text-primary-foreground",
 	bottled: "bg-chart-1 text-primary-foreground",
+	packaging: "bg-chart-1 text-primary-foreground",
+	conditioning: "bg-chart-2 text-primary-foreground",
+	ready: "bg-chart-1 text-primary-foreground",
+	archived: "bg-muted text-muted-foreground",
 	completed: "bg-muted text-muted-foreground",
 };
 
@@ -30,15 +34,15 @@ export function BatchList() {
 		data: batches = [],
 		refetch,
 	} = api.batch.getAll.useQuery();
-	const deleteMutation = api.batch.delete.useMutation({
+	const archiveMutation = api.batch.delete.useMutation({
 		onSuccess: () => refetch(),
 	});
 
 	const [editingBatch, setEditingBatch] = useState<Partial<Batch> | null>(null);
 
-	const handleDelete = (id: string) => {
-		if (confirm("Are you sure you want to delete this batch?")) {
-			deleteMutation.mutate({ id });
+	const handleArchive = (id: string) => {
+		if (confirm("Archive this batch? Its history will be preserved.")) {
+			archiveMutation.mutate({ id });
 		}
 	};
 	if (!isFetched) {
@@ -127,11 +131,11 @@ export function BatchList() {
 								<Button
 									variant="outline"
 									size="sm"
-									aria-label={`Delete batch ${batch.name}`}
-									data-testid="admin-batch-delete"
-									onClick={() => handleDelete(batch.id)}
+									aria-label={`Archive batch ${batch.name}`}
+									data-testid="admin-batch-archive"
+									onClick={() => handleArchive(batch.id)}
 								>
-									<Trash2 className="h-4 w-4" />
+									<Archive className="h-4 w-4" />
 								</Button>
 							</div>
 						</CardContent>

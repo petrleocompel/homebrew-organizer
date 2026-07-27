@@ -26,6 +26,9 @@ if (existsSync(envFile)) {
 
 // Dynamic import so env is set before T3 env validation runs
 const { auth } = await import("@/server/auth");
+const { db } = await import("@/server/db");
+const { breweryMembers, users } = await import("@/server/db/schema");
+const { eq } = await import("drizzle-orm");
 
 const email = "admin@example.com";
 const password = "change-me-owner";
@@ -33,14 +36,35 @@ const password = "change-me-owner";
 console.log(`Creating admin user: ${email}`);
 
 try {
-	await auth.api.signUpEmail({
+	const result = await auth.api.signUpEmail({
 		body: { email, password, name: "Admin" },
 	});
+	await db
+		.insert(breweryMembers)
+		.values({ userId: result.user.id, role: "owner" })
+		.onConflictDoUpdate({
+			target: breweryMembers.userId,
+			set: { role: "owner", disabledAt: null },
+		});
 	console.log("Admin user created successfully.");
 } catch (err) {
 	const msg = err instanceof Error ? err.message : String(err);
 	if (/already exist/i.test(msg) || /duplicate/i.test(msg)) {
-		console.log("User already exists — skipping.");
+		const [existing] = await db
+			.select({ id: users.id })
+			.from(users)
+			.where(eq(users.email, email))
+			.limit(1);
+		if (existing) {
+			await db
+				.insert(breweryMembers)
+				.values({ userId: existing.id, role: "owner" })
+				.onConflictDoUpdate({
+					target: breweryMembers.userId,
+					set: { role: "owner", disabledAt: null },
+				});
+		}
+		console.log("User already exists — ensured Owner membership.");
 	} else {
 		console.error("Error:", msg);
 		process.exit(1);
