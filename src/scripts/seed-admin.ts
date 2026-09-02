@@ -1,6 +1,6 @@
 /**
  * Creates the default admin user via better-auth.
- * Run with: npm run db:seed-admin
+ * Run with: pnpm db:seed-admin
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";

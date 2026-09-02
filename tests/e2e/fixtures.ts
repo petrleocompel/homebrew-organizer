@@ -10,12 +10,12 @@ export function uniqueName(prefix: string) {
 }
 
 export function resetSeedData() {
-	execFileSync("npx", ["tsx", "src/scripts/reset-playwright-db.ts"], {
+	execFileSync("pnpm", ["exec", "tsx", "src/scripts/reset-playwright-db.ts"], {
 		cwd: process.cwd(),
 		env: process.env,
 		stdio: "inherit",
 	});
-	execFileSync("npx", ["tsx", "src/scripts/seed-playwright.ts"], {
+	execFileSync("pnpm", ["exec", "tsx", "src/scripts/seed-playwright.ts"], {
 		cwd: process.cwd(),
 		env: process.env,
 		stdio: "inherit",

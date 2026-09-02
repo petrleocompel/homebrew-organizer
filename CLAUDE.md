@@ -8,16 +8,16 @@ Homebrew Organizer is a T3 Stack application for managing homebrew batches and b
 
 ## Commands
 
-- `npm run dev` — Start dev server with Turbopack
-- `npm run build` — Production build
-- `npm run typecheck` — TypeScript type checking
-- `npm run check` — Biome lint/format check
-- `npm run check:write` — Biome auto-fix (safe fixes)
-- `npm run check:unsafe` — Biome auto-fix (including unsafe fixes)
-- `npm run db:generate` — Generate Drizzle migration files
-- `npm run db:push` — Push schema directly to database
-- `npm run db:migrate` — Run migrations
-- `npm run db:studio` — Open Drizzle Studio GUI
+- `pnpm dev` — Start dev server with Turbopack
+- `pnpm build` — Production build
+- `pnpm typecheck` — TypeScript type checking
+- `pnpm check` — Biome lint/format check
+- `pnpm check:write` — Biome auto-fix (safe fixes)
+- `pnpm check:unsafe` — Biome auto-fix (including unsafe fixes)
+- `pnpm db:generate` — Generate Drizzle migration files
+- `pnpm db:push` — Push schema directly to database
+- `pnpm db:migrate` — Run migrations
+- `pnpm db:studio` — Open Drizzle Studio GUI
 - `./start-database.sh` — Start local PostgreSQL via Docker (reads DATABASE_URL from .env)
 
 ## Architecture

@@ -46,8 +46,9 @@ export async function preparePlaywright() {
 	await ensurePlaywrightDatabaseExists(databaseUrl);
 
 	execFileSync(
-		"npx",
+		"pnpm",
 		[
+			"exec",
 			"drizzle-kit",
 			"push",
 			"--force",

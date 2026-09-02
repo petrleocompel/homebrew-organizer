@@ -53,26 +53,24 @@ The committed API contract is
 
 Requirements:
 
-- Node.js 24 and npm 11
+- Node.js 24 and pnpm 10.33
 - PostgreSQL 18, or Docker/Podman for the supplied development helper
 
 Set up a fresh checkout:
 
 ```bash
-npm install --legacy-peer-deps
+pnpm install --frozen-lockfile
 cp .env.example .env
 ./start-database.sh
-npm run db:migrate
-npm run db:seed-admin
-npm run dev
+pnpm db:migrate
+pnpm db:seed-admin
+pnpm dev
 ```
 
 Open `http://127.0.0.1:3000`. Registration is closed; the explicit seed command
 creates or restores the bootstrap Owner membership.
 
-The dependency install currently uses `--legacy-peer-deps` because Better
-Auth's optional adapters expose peer ranges that npm otherwise attempts to
-resolve even though those adapters are not used by this application.
+The committed `pnpm-lock.yaml` is the authoritative dependency resolution.
 
 ## Upgrading an existing database
 
@@ -80,8 +78,8 @@ Back up PostgreSQL before applying migrations. The migration is additive and
 retains the compatibility columns for one release.
 
 ```bash
-npm run db:migration-preflight
-npm run db:migrate
+pnpm db:migration-preflight
+pnpm db:migrate
 ```
 
 The read-only preflight reports duplicate bottle or batch numbers and the
@@ -117,13 +115,13 @@ those credentials.
 ## Tests and checks
 
 ```bash
-npm run check
-npm run typecheck
-npm run test:unit
-npm run build
-npm run test:e2e:install
-npm run test:e2e
-npm audit --omit=dev
+pnpm check
+pnpm typecheck
+pnpm test:unit
+pnpm build
+pnpm test:e2e:install
+pnpm test:e2e
+pnpm audit --prod
 ```
 
 Playwright requires a disposable PostgreSQL database configured through

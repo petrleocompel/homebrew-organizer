@@ -55,7 +55,7 @@ export default defineConfig({
 		screenshot: "only-on-failure",
 	},
 	webServer: {
-		command: "npm run test:e2e:prepare && npm run dev",
+		command: "pnpm test:e2e:prepare && pnpm dev",
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,
