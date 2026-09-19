@@ -285,9 +285,7 @@ async function fillRowsForBottle(executor: Executor, bottleId: string) {
 		.orderBy(desc(bottleFills.filledAt));
 }
 
-export async function getPublicBottleByCode(
-	code: string,
-): Promise<PublicBottle | null> {
+async function loadPublicBottle(code: string) {
 	if (!isPublicCode(code)) return null;
 	const [identity] = await db
 		.select({ bottle: bottles })
@@ -307,13 +305,53 @@ export async function getPublicBottleByCode(
 	const active = rows.find((row) => row.fill.emptiedAt === null) ?? null;
 	const current = active ? toPublicFill(active) : null;
 
-	return {
+	const dto: PublicBottle = {
 		bottleNumber: identity.bottle.bottleNumber,
 		displayName: identity.bottle.displayName,
 		state: bottleState(identity.bottle.retiredAt, active),
 		currentFill: current,
 		timeline: publicRows.map(toPublicFill),
 		serverTimestamp: new Date().toISOString(),
+	};
+	return { dto, bottle: identity.bottle, active };
+}
+
+export async function getPublicBottleByCode(
+	code: string,
+): Promise<PublicBottle | null> {
+	return (await loadPublicBottle(code))?.dto ?? null;
+}
+
+/**
+ * The `/b/{code}` page shows a little more than the v1 API contract. The same
+ * privacy rule applies: a private batch reveals nothing about the beer.
+ */
+export interface PublicBottlePage extends PublicBottle {
+	volumeMl: number;
+	retiredAt: string | null;
+	currentDescription: string | null;
+	/** Set only when the current batch has a public detail page. */
+	currentListedBatchNumber: number | null;
+}
+
+export async function getPublicBottlePageByCode(
+	code: string,
+): Promise<PublicBottlePage | null> {
+	const loaded = await loadPublicBottle(code);
+	if (!loaded) return null;
+	const batch = loaded.active?.batch ?? null;
+	const publicBeer = batch !== null && batch.visibility !== "private";
+	return {
+		...loaded.dto,
+		volumeMl: loaded.bottle.volumeMl,
+		retiredAt: iso(loaded.bottle.retiredAt),
+		currentDescription: publicBeer
+			? batch.publicDescription?.trim() || null
+			: null,
+		currentListedBatchNumber:
+			batch?.visibility === "listed" && batch.status !== "archived"
+				? batch.batchNumber
+				: null,
 	};
 }
 

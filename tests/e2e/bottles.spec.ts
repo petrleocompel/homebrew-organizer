@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
-	acceptNextDialog,
 	assignedBottleCard,
+	confirmAlertDialog,
 	loginAsAdmin,
 	resetSeedData,
 	seedData,
@@ -88,7 +88,7 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 	await expect(
 		page.getByRole("heading", { name: /Edit Bottle/ }),
 	).not.toBeVisible();
-	await expect(seededAssignedCard).toContainText("ready");
+	await expect(seededAssignedCard).toContainText("Ready");
 
 	const [publicBottlePage] = await Promise.all([
 		page.waitForEvent("popup"),
@@ -97,12 +97,14 @@ test("creates, edits, unassigns, reassigns, and verifies bottle state publicly",
 	await publicBottlePage.waitForLoadState("domcontentloaded");
 	await expect(publicBottlePage).toHaveURL(/\/b\/[a-z2-7]{26}$/);
 	await expect(
-		publicBottlePage.getByText("conditioning", { exact: true }).first(),
+		publicBottlePage.getByRole("heading", {
+			name: "Conditioning in the bottle",
+		}),
 	).toBeVisible();
 	await publicBottlePage.close();
 
-	await acceptNextDialog(page);
 	await seededAssignedCard.getByRole("button", { name: "Remove" }).click();
+	await confirmAlertDialog(page, "Remove bottle");
 	await expect(seededAssignedCard).not.toBeVisible();
 	await expect(page.getByTestId("assigned-bottle-count")).toContainText(
 		"2 bottles assigned",

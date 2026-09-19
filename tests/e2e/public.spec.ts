@@ -30,11 +30,9 @@ test("renders public home, batch, and bottle pages from seeded data", async ({
 		.click();
 	await expect(page).toHaveURL(/\/b\/[a-z2-7]{26}$/);
 	await expect(
-		page.getByRole("heading", {
-			name: seedData.bottles.assigned.label,
-		}),
+		page.getByRole("heading", { name: seedData.batches.amberAle.name }),
 	).toBeVisible();
 	await expect(
-		page.getByText(seedData.batches.amberAle.name).first(),
+		page.getByText(seedData.bottles.assigned.label).first(),
 	).toBeVisible();
 });

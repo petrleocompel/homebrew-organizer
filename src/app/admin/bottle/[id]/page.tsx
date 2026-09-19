@@ -3,7 +3,6 @@
 import {
 	Beer,
 	Calendar,
-	ChevronLeft,
 	Download,
 	ExternalLink,
 	History,
@@ -16,6 +15,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { EditBottleDialog } from "@/components/edit-bottle-dialog";
+import { PageHeader } from "@/components/page-header";
+import { BottleStatusBadge, StatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,25 +29,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { Bottle } from "@/lib/types";
 import { api } from "@/trpc/react";
-
-const bottleStatusColors: Record<string, string> = {
-	empty: "bg-muted text-muted-foreground",
-	filled: "bg-chart-4 text-primary-foreground",
-	conditioning: "bg-chart-2 text-primary-foreground",
-	ready: "bg-chart-1 text-primary-foreground",
-};
-
-const batchStatusColors: Record<string, string> = {
-	planning: "bg-secondary text-secondary-foreground",
-	brewing: "bg-chart-4 text-primary-foreground",
-	fermenting: "bg-chart-2 text-primary-foreground",
-	bottled: "bg-chart-1 text-primary-foreground",
-	packaging: "bg-chart-1 text-primary-foreground",
-	conditioning: "bg-chart-2 text-primary-foreground",
-	ready: "bg-chart-1 text-primary-foreground",
-	archived: "bg-muted text-muted-foreground",
-	completed: "bg-muted text-muted-foreground",
-};
 
 export default function AdminBottlePage() {
 	const { id } = useParams<{ id: string }>();
@@ -97,48 +79,31 @@ export default function AdminBottlePage() {
 
 	return (
 		<>
-			<header className="border-border border-b bg-card">
-				<div className="container mx-auto px-4 py-6">
-					<div className="flex items-center gap-4">
-						<Button variant="ghost" size="sm" asChild>
-							<Link href="/admin/bottles" className="h-16">
-								<ChevronLeft className="h-8 w-8" />
-							</Link>
-						</Button>
-						<div className="flex flex-1 items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-								<Beer className="h-6 w-6 text-primary-foreground" />
-							</div>
-							<div>
-								<h1 className="text-balance font-bold text-2xl">
-									Bottle {bottle.label ?? `#${bottle.bottleNumber}`}
-								</h1>
-								<p className="text-muted-foreground text-sm">
-									Admin — bottle details
-								</p>
-							</div>
-						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() =>
-								setEditingBottle({
-									id: bottle.id,
-									status: bottle.status,
-									bottleNumber: bottle.bottleNumber,
-									label: bottle.label,
-									currentBatchId: bottle.currentBatchId ?? undefined,
-								})
-							}
-						>
-							<Pencil className="mr-2 h-4 w-4" />
-							Edit
-						</Button>
-					</div>
-				</div>
-			</header>
+			<PageHeader
+				className="p-4 pb-0 md:p-7 md:pb-0"
+				title={`Bottle ${bottle.label ?? `#${bottle.bottleNumber}`}`}
+				description="Admin — bottle details"
+				actions={
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							setEditingBottle({
+								id: bottle.id,
+								status: bottle.status,
+								bottleNumber: bottle.bottleNumber,
+								label: bottle.label,
+								currentBatchId: bottle.currentBatchId ?? undefined,
+							})
+						}
+					>
+						<Pencil className="mr-2 h-4 w-4" />
+						Edit
+					</Button>
+				}
+			/>
 
-			<main className="container mx-auto px-4 py-8">
+			<div className="p-4 md:p-7">
 				<div className="mx-auto max-w-3xl space-y-6">
 					<Card>
 						<CardHeader>
@@ -161,9 +126,7 @@ export default function AdminBottlePage() {
 									<p className="mb-1 text-muted-foreground text-sm">
 										Current Status
 									</p>
-									<Badge className={bottleStatusColors[bottle.status]}>
-										{bottle.status}
-									</Badge>
+									<BottleStatusBadge status={bottle.status} />
 								</div>
 							</div>
 							<Separator />
@@ -259,9 +222,7 @@ export default function AdminBottlePage() {
 									<Badge variant="outline" className="font-mono">
 										Batch #{batch.batchNumber}
 									</Badge>
-									<Badge className={batchStatusColors[batch.status]}>
-										{batch.status}
-									</Badge>
+									<StatusBadge kind="batch" value={batch.status} />
 								</div>
 								<h3 className="mb-4 font-semibold text-lg">{batch.name}</h3>
 								<Button asChild variant="default" size="sm">
@@ -316,7 +277,7 @@ export default function AdminBottlePage() {
 						</Card>
 					)}
 				</div>
-			</main>
+			</div>
 
 			{editingBottle && (
 				<EditBottleDialog

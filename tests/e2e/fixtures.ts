@@ -33,8 +33,11 @@ export async function loginAsAdmin(page: Page) {
 	).toBeVisible();
 }
 
-export async function acceptNextDialog(page: Page) {
-	page.once("dialog", (dialog) => dialog.accept());
+export async function confirmAlertDialog(page: Page, confirmLabel: string) {
+	await page
+		.getByRole("alertdialog")
+		.getByRole("button", { name: confirmLabel })
+		.click();
 }
 
 export async function selectRadixOption(

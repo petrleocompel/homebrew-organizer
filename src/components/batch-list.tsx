@@ -3,6 +3,8 @@
 import { Archive, Bold as Bottle, LoaderIcon, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { StatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,18 +18,6 @@ import type { Batch } from "@/lib/types";
 import { api } from "@/trpc/react";
 import { EditBatchDialog } from "./edit-batch-dialog";
 
-const statusColors: Record<string, string> = {
-	planning: "bg-secondary text-secondary-foreground",
-	brewing: "bg-chart-4 text-primary-foreground",
-	fermenting: "bg-chart-2 text-primary-foreground",
-	bottled: "bg-chart-1 text-primary-foreground",
-	packaging: "bg-chart-1 text-primary-foreground",
-	conditioning: "bg-chart-2 text-primary-foreground",
-	ready: "bg-chart-1 text-primary-foreground",
-	archived: "bg-muted text-muted-foreground",
-	completed: "bg-muted text-muted-foreground",
-};
-
 export function BatchList() {
 	const {
 		isFetched,
@@ -40,11 +30,10 @@ export function BatchList() {
 
 	const [editingBatch, setEditingBatch] = useState<Partial<Batch> | null>(null);
 
-	const handleArchive = (id: string) => {
-		if (confirm("Archive this batch? Its history will be preserved.")) {
-			archiveMutation.mutate({ id });
-		}
-	};
+	const [archivingBatch, setArchivingBatch] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
 	if (!isFetched) {
 		return (
 			<div className="flex flex-col items-center justify-center py-16 text-center">
@@ -75,7 +64,7 @@ export function BatchList() {
 
 	return (
 		<>
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+			<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-4">
 				{batches.map((batch) => (
 					<Card
 						key={batch.id}
@@ -89,9 +78,7 @@ export function BatchList() {
 										<Badge variant="outline" className="font-mono">
 											#{batch.batchNumber}
 										</Badge>
-										<Badge className={statusColors[batch.status]}>
-											{batch.status}
-										</Badge>
+										<StatusBadge kind="batch" value={batch.status} />
 									</div>
 									<CardTitle className="text-balance">{batch.name}</CardTitle>
 									<CardDescription className="text-pretty">
@@ -133,7 +120,9 @@ export function BatchList() {
 									size="sm"
 									aria-label={`Archive batch ${batch.name}`}
 									data-testid="admin-batch-archive"
-									onClick={() => handleArchive(batch.id)}
+									onClick={() =>
+										setArchivingBatch({ id: batch.id, name: batch.name })
+									}
 								>
 									<Archive className="h-4 w-4" />
 								</Button>
@@ -142,6 +131,19 @@ export function BatchList() {
 					</Card>
 				))}
 			</div>
+
+			<ConfirmDialog
+				open={!!archivingBatch}
+				onOpenChange={(open) => !open && setArchivingBatch(null)}
+				title={`Archive ${archivingBatch?.name ?? "this batch"}?`}
+				description="The batch leaves the active lists and the public catalog. Nothing is deleted: its fills, measurements and history stay in place."
+				confirmLabel="Archive batch"
+				destructive
+				onConfirm={() => {
+					if (archivingBatch) archiveMutation.mutate({ id: archivingBatch.id });
+					setArchivingBatch(null);
+				}}
+			/>
 
 			{editingBatch && (
 				<EditBatchDialog

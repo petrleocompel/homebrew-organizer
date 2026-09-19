@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
-	acceptNextDialog,
 	adminBatchCard,
+	confirmAlertDialog,
 	loginAsAdmin,
 	resetSeedData,
 	selectRadixOption,
@@ -69,8 +69,8 @@ test("creates, edits, and archives a batch across admin and public views", async
 	await expect(page.getByText(editedName)).toBeVisible();
 
 	await page.goto("/admin");
-	await acceptNextDialog(page);
 	await editedCard.getByTestId("admin-batch-archive").click();
+	await confirmAlertDialog(page, "Archive batch");
 	await expect(editedCard).not.toBeVisible();
 
 	await page.goto("/");

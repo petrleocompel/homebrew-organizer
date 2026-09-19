@@ -4,7 +4,8 @@ import { Archive, Beer, ExternalLink, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CreateBottlesDialog } from "@/components/create-bottles-dialog";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { BottleStatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,13 +18,6 @@ import {
 } from "@/components/ui/select";
 import type { BottleStatus } from "@/lib/types";
 import { api } from "@/trpc/react";
-
-const bottleStatusColors = {
-	empty: "bg-muted text-muted-foreground",
-	filled: "bg-chart-4 text-primary-foreground",
-	conditioning: "bg-chart-2 text-primary-foreground",
-	ready: "bg-chart-1 text-primary-foreground",
-};
 
 export default function AdminBottlesPage() {
 	const { data: bottles = [], refetch } = api.bottle.getAll.useQuery();
@@ -77,16 +71,13 @@ export default function AdminBottlesPage() {
 	};
 
 	return (
-		<div className="container mx-auto px-4 py-8">
-			<div className="mb-6 flex items-center justify-between gap-4">
-				<div>
-					<h1 className="font-bold text-2xl">Bottles</h1>
-					<p className="text-muted-foreground text-sm">
-						Manage all bottles in your inventory
-					</p>
-				</div>
-				<CreateBottlesDialog onCreated={() => refetch()} />
-			</div>
+		<div className="p-4 md:p-7">
+			<PageHeader
+				className="mb-6"
+				title="Bottles"
+				description="Manage all bottles in your inventory"
+				actions={<CreateBottlesDialog onCreated={() => refetch()} />}
+			/>
 
 			<div className="mb-4 flex flex-wrap gap-3">
 				<Input
@@ -158,7 +149,7 @@ export default function AdminBottlesPage() {
 					</CardContent>
 				</Card>
 			) : (
-				<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+				<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3">
 					{filtered.map((bottle) => {
 						const label = bottle.label ?? `#${bottle.bottleNumber}`;
 						const batch = bottle.currentBatchId
@@ -188,9 +179,7 @@ export default function AdminBottlesPage() {
 												{label}
 											</span>
 										</label>
-										<Badge className={bottleStatusColors[bottle.status]}>
-											{bottle.retiredAt ? "retired" : bottle.status}
-										</Badge>
+										<BottleStatusBadge status={bottle.status} />
 									</div>
 									<p className="mb-3 truncate text-muted-foreground text-xs">
 										{batch ? `${batch.name}` : "Unassigned"}

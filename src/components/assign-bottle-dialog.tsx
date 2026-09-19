@@ -3,6 +3,7 @@
 import { Check, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { BottleStatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,13 +34,6 @@ interface AssignBottleDialogProps {
 	onOpenChange: (open: boolean) => void;
 	onAssign: (bottleIds: string[]) => void;
 }
-
-const bottleStatusColors = {
-	empty: "bg-muted text-muted-foreground",
-	filled: "bg-chart-4 text-primary-foreground",
-	conditioning: "bg-chart-2 text-primary-foreground",
-	ready: "bg-chart-1 text-primary-foreground",
-};
 
 export function AssignBottleDialog({
 	availableBottles,
@@ -168,9 +162,7 @@ export function AssignBottleDialog({
 												<Badge variant="outline" className="font-mono">
 													{bottle.label ?? `#${bottle.bottleNumber}`}
 												</Badge>
-												<Badge className={bottleStatusColors[bottle.status]}>
-													{bottle.status}
-												</Badge>
+												<BottleStatusBadge status={bottle.status} />
 											</div>
 										</div>
 										<div className="text-muted-foreground text-sm">

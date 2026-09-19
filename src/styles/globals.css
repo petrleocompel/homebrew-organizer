@@ -1,90 +1,130 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@theme {
-	--font-sans:
-		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	--background: oklch(0.98 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	/* Amber/copper primary color for craft beer aesthetic */
-	--primary: oklch(0.65 0.15 55);
-	--primary-foreground: oklch(0.98 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--destructive-foreground: oklch(0.98 0 0);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.65 0.15 55);
-	--chart-1: oklch(0.646 0.222 41.116);
-	--chart-2: oklch(0.6 0.118 184.704);
-	--chart-3: oklch(0.398 0.07 227.392);
-	--chart-4: oklch(0.828 0.189 84.429);
-	--chart-5: oklch(0.769 0.188 70.08);
 	--radius: 0.5rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
+	--background: oklch(0.99 0.004 75);
+	--foreground: oklch(0.22 0.012 60);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.22 0.012 60);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.22 0.012 60);
+	/* Amber primary keeps a dark foreground: white on it is only 2.6:1 */
+	--primary: oklch(0.65 0.15 55);
+	--primary-foreground: oklch(0.18 0.035 55);
+	--secondary: oklch(0.965 0.006 75);
+	--secondary-foreground: oklch(0.26 0.012 60);
+	--muted: oklch(0.965 0.006 75);
+	--muted-foreground: oklch(0.5 0.012 60);
+	--accent: oklch(0.955 0.03 70);
+	--accent-foreground: oklch(0.3 0.05 55);
+	--destructive: oklch(0.52 0.17 27);
+	--destructive-foreground: oklch(0.99 0.004 75);
+	--border: oklch(0.915 0.008 70);
+	--input: oklch(0.9 0.008 70);
+	--ring: oklch(0.65 0.15 55);
+
+	--sidebar: oklch(0.975 0.006 75);
+	--sidebar-foreground: oklch(0.26 0.012 60);
 	--sidebar-primary: oklch(0.65 0.15 55);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
+	--sidebar-primary-foreground: oklch(0.18 0.035 55);
+	--sidebar-accent: oklch(0.945 0.012 70);
+	--sidebar-accent-foreground: oklch(0.24 0.02 55);
+	--sidebar-border: oklch(0.905 0.008 70);
+	--sidebar-ring: oklch(0.65 0.15 55);
+
+	/* States: the hue is the state's identity and is the same in both modes */
+	--state-planning: oklch(0.45 0.03 250);
+	--state-planning-bg: oklch(0.96 0.012 250);
+	--state-brewing: oklch(0.47 0.14 40);
+	--state-brewing-bg: oklch(0.958 0.035 40);
+	--state-fermenting: oklch(0.46 0.11 95);
+	--state-fermenting-bg: oklch(0.96 0.045 95);
+	--state-packaging: oklch(0.44 0.09 195);
+	--state-packaging-bg: oklch(0.955 0.03 195);
+	--state-conditioning: oklch(0.45 0.11 275);
+	--state-conditioning-bg: oklch(0.96 0.03 275);
+	--state-ready: oklch(0.42 0.12 145);
+	--state-ready-bg: oklch(0.955 0.04 145);
+	--state-completed: oklch(0.44 0.02 60);
+	--state-completed-bg: oklch(0.955 0.006 75);
+	--state-archived: oklch(0.52 0.01 60);
+	--state-archived-bg: oklch(0.945 0.004 75);
+	--state-attention: oklch(0.5 0.15 32);
+	--state-attention-bg: oklch(0.96 0.035 32);
+
+	/* Charts (recharts): amber series, not the state colors */
+	--chart-1: oklch(0.65 0.15 55);
+	--chart-2: oklch(0.55 0.11 35);
+	--chart-3: oklch(0.48 0.09 205);
+	--chart-4: oklch(0.6 0.1 145);
+	--chart-5: oklch(0.42 0.06 285);
 }
 
 .dark {
-	/* Dark theme with warm brewery aesthetic */
-	--background: oklch(0.12 0.01 55);
-	--foreground: oklch(0.95 0.01 55);
-	--card: oklch(0.16 0.01 55);
-	--card-foreground: oklch(0.95 0.01 55);
-	--popover: oklch(0.16 0.01 55);
-	--popover-foreground: oklch(0.95 0.01 55);
-	--primary: oklch(0.72 0.15 55);
-	--primary-foreground: oklch(0.12 0.01 55);
-	--secondary: oklch(0.22 0.01 55);
-	--secondary-foreground: oklch(0.95 0.01 55);
-	--muted: oklch(0.22 0.01 55);
-	--muted-foreground: oklch(0.65 0.01 55);
-	--accent: oklch(0.22 0.01 55);
-	--accent-foreground: oklch(0.95 0.01 55);
-	--destructive: oklch(0.45 0.18 25);
-	--destructive-foreground: oklch(0.95 0.01 55);
-	--border: oklch(0.22 0.01 55);
-	--input: oklch(0.22 0.01 55);
-	--ring: oklch(0.72 0.15 55);
-	--chart-1: oklch(0.488 0.243 264.376);
-	--chart-2: oklch(0.696 0.17 162.48);
-	--chart-3: oklch(0.769 0.188 70.08);
-	--chart-4: oklch(0.627 0.265 303.9);
-	--chart-5: oklch(0.645 0.246 16.439);
-	--sidebar: oklch(0.16 0.01 55);
-	--sidebar-foreground: oklch(0.95 0.01 55);
-	--sidebar-primary: oklch(0.72 0.15 55);
-	--sidebar-primary-foreground: oklch(0.12 0.01 55);
-	--sidebar-accent: oklch(0.22 0.01 55);
-	--sidebar-accent-foreground: oklch(0.95 0.01 55);
-	--sidebar-border: oklch(0.22 0.01 55);
-	--sidebar-ring: oklch(0.439 0 0);
+	--background: oklch(0.19 0.012 55);
+	--foreground: oklch(0.95 0.008 75);
+	--card: oklch(0.225 0.014 55);
+	--card-foreground: oklch(0.95 0.008 75);
+	--popover: oklch(0.24 0.014 55);
+	--popover-foreground: oklch(0.95 0.008 75);
+	--primary: oklch(0.72 0.14 58);
+	--primary-foreground: oklch(0.2 0.04 55);
+	--secondary: oklch(0.27 0.014 55);
+	--secondary-foreground: oklch(0.93 0.008 75);
+	--muted: oklch(0.27 0.014 55);
+	--muted-foreground: oklch(0.72 0.012 70);
+	--accent: oklch(0.3 0.03 55);
+	--accent-foreground: oklch(0.94 0.02 70);
+	--destructive: oklch(0.62 0.17 27);
+	--destructive-foreground: oklch(0.19 0.012 55);
+	--border: oklch(0.31 0.016 55);
+	--input: oklch(0.34 0.016 55);
+	--ring: oklch(0.72 0.14 58);
+
+	--sidebar: oklch(0.165 0.012 55);
+	--sidebar-foreground: oklch(0.92 0.008 75);
+	--sidebar-primary: oklch(0.72 0.14 58);
+	--sidebar-primary-foreground: oklch(0.2 0.04 55);
+	--sidebar-accent: oklch(0.26 0.016 55);
+	--sidebar-accent-foreground: oklch(0.96 0.008 75);
+	--sidebar-border: oklch(0.29 0.016 55);
+	--sidebar-ring: oklch(0.72 0.14 58);
+
+	--state-planning: oklch(0.8 0.04 250);
+	--state-planning-bg: oklch(0.285 0.03 250);
+	--state-brewing: oklch(0.8 0.12 40);
+	--state-brewing-bg: oklch(0.29 0.06 40);
+	--state-fermenting: oklch(0.82 0.11 95);
+	--state-fermenting-bg: oklch(0.285 0.055 95);
+	--state-packaging: oklch(0.8 0.08 195);
+	--state-packaging-bg: oklch(0.28 0.045 195);
+	--state-conditioning: oklch(0.8 0.1 275);
+	--state-conditioning-bg: oklch(0.285 0.05 275);
+	--state-ready: oklch(0.8 0.11 145);
+	--state-ready-bg: oklch(0.28 0.055 145);
+	--state-completed: oklch(0.78 0.015 60);
+	--state-completed-bg: oklch(0.275 0.01 60);
+	--state-archived: oklch(0.7 0.01 60);
+	--state-archived-bg: oklch(0.255 0.008 60);
+	--state-attention: oklch(0.78 0.13 32);
+	--state-attention-bg: oklch(0.295 0.06 32);
+
+	--chart-1: oklch(0.72 0.14 58);
+	--chart-2: oklch(0.68 0.11 35);
+	--chart-3: oklch(0.7 0.09 205);
+	--chart-4: oklch(0.74 0.1 145);
+	--chart-5: oklch(0.7 0.07 285);
 }
 
 @theme inline {
-	--font-sans: var(--font-geist-sans);
-	--font-mono: var(--font-geist-mono);
+	--font-sans:
+		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	--font-mono:
+		var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
 	--color-card: var(--card);
@@ -109,10 +149,6 @@
 	--color-chart-3: var(--chart-3);
 	--color-chart-4: var(--chart-4);
 	--color-chart-5: var(--chart-5);
-	--radius-sm: calc(var(--radius) - 4px);
-	--radius-md: calc(var(--radius) - 2px);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) + 4px);
 	--color-sidebar: var(--sidebar);
 	--color-sidebar-foreground: var(--sidebar-foreground);
 	--color-sidebar-primary: var(--sidebar-primary);
@@ -121,6 +157,40 @@
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
+	/* Batch states */
+	--color-state-planning: var(--state-planning);
+	--color-state-planning-bg: var(--state-planning-bg);
+	--color-state-brewing: var(--state-brewing);
+	--color-state-brewing-bg: var(--state-brewing-bg);
+	--color-state-fermenting: var(--state-fermenting);
+	--color-state-fermenting-bg: var(--state-fermenting-bg);
+	--color-state-packaging: var(--state-packaging);
+	--color-state-packaging-bg: var(--state-packaging-bg);
+	--color-state-conditioning: var(--state-conditioning);
+	--color-state-conditioning-bg: var(--state-conditioning-bg);
+	--color-state-ready: var(--state-ready);
+	--color-state-ready-bg: var(--state-ready-bg);
+	--color-state-completed: var(--state-completed);
+	--color-state-completed-bg: var(--state-completed-bg);
+	--color-state-archived: var(--state-archived);
+	--color-state-archived-bg: var(--state-archived-bg);
+	--color-state-attention: var(--state-attention);
+	--color-state-attention-bg: var(--state-attention-bg);
+	/* Fill states alias the batch states, they add no new hues */
+	--color-fill-filled: var(--state-packaging);
+	--color-fill-filled-bg: var(--state-packaging-bg);
+	--color-fill-conditioning: var(--state-conditioning);
+	--color-fill-conditioning-bg: var(--state-conditioning-bg);
+	--color-fill-ready: var(--state-ready);
+	--color-fill-ready-bg: var(--state-ready-bg);
+	--color-fill-emptied: var(--state-completed);
+	--color-fill-emptied-bg: var(--state-completed-bg);
+	--radius-sm: calc(var(--radius) - 2px);
+	--radius-md: var(--radius);
+	--radius-lg: calc(var(--radius) + 2px);
+	--radius-xl: calc(var(--radius) + 6px);
+	--shadow-xs: 0 1px 2px oklch(0.22 0.012 60 / 0.05);
+	--shadow-md: 0 4px 14px oklch(0.22 0.012 60 / 0.1);
 }
 
 @layer base {

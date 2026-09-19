@@ -2,6 +2,8 @@
 
 import { ExternalLink, Plus } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { BottleStatusBadge, StatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,14 +18,6 @@ import { api } from "@/trpc/react";
 import { AssignBottleDialog } from "./assign-bottle-dialog";
 import { CreateBottleDialog } from "./create-bottle-dialog";
 import { EditBottleDialog } from "./edit-bottle-dialog";
-
-const bottleStatusColors: Record<string, string> = {
-	empty: "bg-muted text-muted-foreground",
-	filled: "bg-chart-4 text-primary-foreground",
-	conditioning: "bg-chart-2 text-primary-foreground",
-	ready: "bg-chart-1 text-primary-foreground",
-	emptied: "bg-muted text-muted-foreground",
-};
 
 interface BottleManagerProps {
 	batchId: string;
@@ -59,18 +53,24 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 	> | null>(null);
 	const [showAssignDialog, setShowAssignDialog] = useState(false);
 
-	const handleUnassign = (bottleId: string) => {
-		if (confirm("Remove this bottle from the batch?")) {
-			unassignMutation.mutate({ bottleId });
-		}
-	};
+	const [pendingAction, setPendingAction] = useState<{
+		kind: "unassign" | "retire";
+		bottleId: string;
+	} | null>(null);
 
-	const handleRetire = (bottleId: string) => {
-		if (
-			confirm("Retire this physical bottle? Its history will be preserved.")
-		) {
-			retireMutation.mutate({ id: bottleId });
+	const handleUnassign = (bottleId: string) =>
+		setPendingAction({ kind: "unassign", bottleId });
+
+	const handleRetire = (bottleId: string) =>
+		setPendingAction({ kind: "retire", bottleId });
+
+	const confirmPendingAction = () => {
+		if (pendingAction?.kind === "unassign") {
+			unassignMutation.mutate({ bottleId: pendingAction.bottleId });
+		} else if (pendingAction?.kind === "retire") {
+			retireMutation.mutate({ id: pendingAction.bottleId });
 		}
+		setPendingAction(null);
 	};
 
 	const handleAssign = (_bottleIds: string[]) => {
@@ -98,9 +98,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 								<Badge variant="outline" className="font-mono">
 									#{batch.batchNumber}
 								</Badge>
-								<Badge className="bg-primary text-primary-foreground">
-									{batch.status}
-								</Badge>
+								<StatusBadge kind="batch" value={batch.status} />
 							</div>
 							<CardTitle className="text-balance">{batch.name}</CardTitle>
 							<CardDescription className="text-pretty">
@@ -159,7 +157,7 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 					</CardContent>
 				</Card>
 			) : (
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+				<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-4">
 					{assignedBottles.map((bottle) => (
 						<Card
 							key={bottle.id}
@@ -173,15 +171,13 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 											<Badge variant="outline" className="font-mono">
 												{bottle.label ?? `#${bottle.bottleNumber}`}
 											</Badge>
-											<Badge className={bottleStatusColors[bottle.status]}>
-												{bottle.status}
-											</Badge>
+											<BottleStatusBadge status={bottle.status} />
 										</div>
 									</div>
 								</div>
 							</CardHeader>
 							<CardContent>
-								<div className="flex items-center gap-2">
+								<div className="flex flex-wrap items-center gap-2">
 									<Button
 										variant="outline"
 										size="sm"
@@ -221,6 +217,26 @@ export function BottleManager({ batchId }: BottleManagerProps) {
 					))}
 				</div>
 			)}
+
+			<ConfirmDialog
+				open={!!pendingAction}
+				onOpenChange={(open) => !open && setPendingAction(null)}
+				title={
+					pendingAction?.kind === "retire"
+						? "Retire this bottle?"
+						: "Remove this bottle from the batch?"
+				}
+				description={
+					pendingAction?.kind === "retire"
+						? "The physical bottle can no longer be filled. Nothing is deleted: its QR code, fills and history stay in place, and it can be restored later."
+						: "The active fill ends and the bottle becomes available again. The fill stays in the bottle's history."
+				}
+				confirmLabel={
+					pendingAction?.kind === "retire" ? "Retire bottle" : "Remove bottle"
+				}
+				destructive
+				onConfirm={confirmPendingAction}
+			/>
 
 			{editingBottle && (
 				<EditBottleDialog
