@@ -16,7 +16,10 @@ Homebrew Organizer is a T3 Stack application for managing homebrew batches and b
 - `pnpm check:unsafe` — Biome auto-fix (including unsafe fixes)
 - `pnpm db:generate` — Generate Drizzle migration files
 - `pnpm db:push` — Push schema directly to database
-- `pnpm db:migrate` — Run migrations
+- `pnpm db:migrate` — Run migrations (drizzle-orm migrator via `src/scripts/migrate.ts`, prints full PostgreSQL errors)
+- `pnpm db:seed-admin` — Create the bootstrap Owner from `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+- `pnpm build:scripts` — Bundle the migrate and seed scripts into `dist/` for the Docker image
+- `pnpm test:unit` / `pnpm test:e2e` — Vitest unit tests / Playwright E2E (needs a disposable `PLAYWRIGHT_DATABASE_URL`)
 - `pnpm db:studio` — Open Drizzle Studio GUI
 - `./start-database.sh` — Start local PostgreSQL via Docker (reads DATABASE_URL from .env)
 
@@ -37,7 +40,11 @@ Homebrew Organizer is a T3 Stack application for managing homebrew batches and b
 - `src/app/` — Next.js App Router pages (`batch/`, `bottle/` routes)
 - `src/env.js` — Runtime env validation via `@t3-oss/env-nextjs` (requires `DATABASE_URL`, optional `BETTER_AUTH_SECRET` in dev)
 
-**Environment:** Requires `DATABASE_URL` (PostgreSQL connection string). Set `SKIP_ENV_VALIDATION=1` to skip env checks during Docker builds.
+**Environment:** Requires `DATABASE_URL` (PostgreSQL connection string); production also requires `PUBLIC_APP_URL` and `BETTER_AUTH_SECRET`. Instance identity (`OPERATOR_NAME`, `SUPPORT_EMAIL`, `APPLE_TEAM_ID`, `APPLE_BUNDLE_ID`) is optional and must never be hardcoded. Set `SKIP_ENV_VALIDATION=1` to skip env checks during Docker builds.
+
+**Migrations:** Never edit or reorder a released migration. The migrator only applies entries newer than the last applied journal timestamp, so new migrations must be the newest entry in `drizzle/meta/_journal.json`.
+
+**Docker & releases:** `Dockerfile` builds a Next.js `standalone` image (non-root) with bundled `scripts/migrate.mjs` and `scripts/seed-admin.mjs`. `compose.yaml` is the self-hosting example. `.github/workflows/image.yml` publishes `ghcr.io/petrleocompel/homebrew-organizer` (`edge` from `main`, semver + `latest` from `vX.Y.Z` tags) and creates the GitHub release.
 
 ## Code Style
 

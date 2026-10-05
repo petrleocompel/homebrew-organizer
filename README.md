@@ -1,8 +1,12 @@
 # Homebrew Organizer
 
-Homebrew Organizer is the authoritative system for recipes, batches, reusable
-bottles, permanent QR identities, label generation, team access, and audit
-history. The browser uses tRPC while the native Homebrew Scan app uses the
+[![CI](https://github.com/petrleocompel/homebrew-organizer/actions/workflows/ci.yml/badge.svg)](https://github.com/petrleocompel/homebrew-organizer/actions/workflows/ci.yml)
+[![Image](https://github.com/petrleocompel/homebrew-organizer/actions/workflows/image.yml/badge.svg)](https://github.com/petrleocompel/homebrew-organizer/pkgs/container/homebrew-organizer)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Homebrew Organizer is a self-hosted system for homebrew recipes, batches,
+reusable bottles, permanent QR identities, label generation, team access, and
+audit history. The browser uses tRPC while the native Homebrew Scan app uses the
 versioned REST API under `/api/v1`.
 
 ## What is included
@@ -49,6 +53,63 @@ versioned REST API under `/api/v1`.
 The committed API contract is
 [`openapi/homebrew-v1.yaml`](openapi/homebrew-v1.yaml).
 
+## Self-hosting
+
+Images are published to the GitHub Container Registry for `linux/amd64` and
+`linux/arm64`:
+
+| Tag | Source |
+| --- | --- |
+| `latest`, `X.Y.Z`, `X.Y` | Release tags `vX.Y.Z` |
+| `edge` | Latest commit on `main` |
+| `sha-<commit>` | Any published commit |
+
+The supplied [`compose.yaml`](compose.yaml) runs PostgreSQL, applies migrations
+in a one-shot `migrate` container, and then starts the app on port 3000:
+
+```bash
+curl -O https://raw.githubusercontent.com/petrleocompel/homebrew-organizer/main/compose.yaml
+curl -o .env https://raw.githubusercontent.com/petrleocompel/homebrew-organizer/main/.env.example
+# Set PUBLIC_APP_URL, BETTER_AUTH_SECRET and POSTGRES_PASSWORD in .env
+docker compose up -d
+docker compose run --rm -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD='a-long-password' \
+  app node scripts/seed-admin.mjs
+```
+
+Registration is closed: the seed command creates the first Owner, who then
+invites everyone else. Put a TLS-terminating reverse proxy in front of the app
+and set `PUBLIC_APP_URL` to its public HTTPS origin. Printed QR labels encode
+that origin, so choose it before printing.
+
+Pin `HOMEBREW_ORGANIZER_VERSION` in `.env` to a release instead of `latest`
+for predictable upgrades. Back up PostgreSQL before upgrading; migrations run
+automatically when the stack starts.
+
+The image also works without Compose:
+
+```bash
+docker run --rm -e DATABASE_URL=... ghcr.io/petrleocompel/homebrew-organizer node scripts/migrate.mjs
+docker run -d -p 3000:3000 -e DATABASE_URL=... -e PUBLIC_APP_URL=... -e BETTER_AUTH_SECRET=... \
+  ghcr.io/petrleocompel/homebrew-organizer
+```
+
+## Configuration
+
+See [`.env.example`](.env.example) for the complete list.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | PostgreSQL connection |
+| `PUBLIC_APP_URL` | Production | Canonical QR, public-link, and authentication origin |
+| `BETTER_AUTH_SECRET` | Production | Better Auth signing secret (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | No | Authentication origin when it differs from `PUBLIC_APP_URL` |
+| `ALLOWED_QR_HOSTS` | No | Comma-separated QR host allowlist; defaults to the `PUBLIC_APP_URL` host |
+| `RECIPE_UPLOAD_MAX_BYTES` | No | Recipe upload limit (default 5 MiB) |
+| `PDF_UPLOAD_MAX_BYTES` | No | Label artwork upload limit (default 10 MiB) |
+| `OPERATOR_NAME` | No | Operator shown on the footer and privacy page |
+| `SUPPORT_EMAIL` | No | Contact shown on the footer, privacy, and support pages |
+| `APPLE_TEAM_ID`, `APPLE_BUNDLE_ID` | No | Serve iOS Universal Links for `/b/*` when both are set |
+
 ## Local development
 
 Requirements:
@@ -56,61 +117,32 @@ Requirements:
 - Node.js 24 and pnpm 10.33
 - PostgreSQL 18, or Docker/Podman for the supplied development helper
 
-Set up a fresh checkout:
-
 ```bash
 pnpm install --frozen-lockfile
 cp .env.example .env
 ./start-database.sh
 pnpm db:migrate
-pnpm db:seed-admin
+pnpm db:seed-admin   # uses ADMIN_EMAIL / ADMIN_PASSWORD from .env
 pnpm dev
 ```
 
-Open `http://127.0.0.1:3000`. Registration is closed; the explicit seed command
-creates or restores the bootstrap Owner membership.
+Open `http://localhost:3000` and sign in as the seeded Owner.
 
-The committed `pnpm-lock.yaml` is the authoritative dependency resolution.
+## Upgrading a pre-release database
 
-## Upgrading an existing database
-
-Back up PostgreSQL before applying migrations. The migration is additive and
-retains the compatibility columns for one release.
+Databases created before the bottle-identity migration can be checked first
+with the read-only preflight:
 
 ```bash
 pnpm db:migration-preflight
 pnpm db:migrate
 ```
 
-The read-only preflight reports duplicate bottle or batch numbers and the
-missing numeric bottles in the legacy 11–30 range. Resolve duplicates before
-running the migration. The migration then creates permanent public codes and
+The preflight reports duplicate bottle or batch numbers and the numeric bottles
+in the legacy 11–30 range that the migration will create. Resolve duplicates
+before migrating. The migration then creates permanent public codes and
 aliases, supplies missing 11–30 bottles, and converts current and historical
 assignments into fills and events.
-
-After migration, verify every legacy label from 11 through 30 and take a second
-backup before eventually removing compatibility columns in a later release.
-
-## Environment
-
-See [`.env.example`](.env.example) for the complete list. The important
-variables are:
-
-| Variable | Purpose |
-| --- | --- |
-| `DATABASE_URL` | PostgreSQL connection |
-| `BETTER_AUTH_SECRET` | Better Auth signing secret |
-| `BETTER_AUTH_URL` | Authentication origin |
-| `PUBLIC_APP_URL` | Canonical QR and public-link origin |
-| `ALLOWED_QR_HOSTS` | Comma-separated QR host allowlist |
-| `RECIPE_UPLOAD_MAX_BYTES` | Recipe upload limit |
-| `PDF_UPLOAD_MAX_BYTES` | Label artwork upload limit |
-| `APPLE_TEAM_ID` | Optional AASA team identifier |
-| `APPLE_BUNDLE_ID` | Homebrew Scan bundle identifier |
-
-Deployment and bootstrap credentials currently remain tracked in this
-repository by project decision. Treat access to the repository as access to
-those credentials.
 
 ## Tests and checks
 
@@ -121,7 +153,6 @@ pnpm test:unit
 pnpm build
 pnpm test:e2e:install
 pnpm test:e2e
-pnpm audit --prod
 ```
 
 Playwright requires a disposable PostgreSQL database configured through
@@ -133,20 +164,17 @@ The API E2E suite covers public-data privacy, bearer authentication, role
 boundaries, idempotency and concurrent assignment, recipe interchange, label
 preflight, exact page dimensions, and downloadable PDF/ZIP output.
 
-## Docker and rollout
+## Releases
 
-Build the standalone application image with:
+Push a `vX.Y.Z` tag on `main`. The Image workflow publishes the multi-arch
+image with build provenance and creates a GitHub release with generated notes.
+Tags with a suffix such as `v1.2.0-rc.1` become pre-releases.
 
-```bash
-docker build -t homebrew-organizer .
-```
+## Contributing and security
 
-Database migrations are an explicit pre-deployment step and are not run by
-application startup. A safe rollout is:
+See [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately as
+described in [SECURITY.md](SECURITY.md).
 
-1. Back up PostgreSQL.
-2. Run the migration preflight and migrations from the checked-out release.
-3. Deploy the application image.
-4. Verify canonical and legacy bottle links.
-5. Print and physically scan a sample 80 × 80 mm label.
-6. Distribute the matching Homebrew Scan build through TestFlight.
+## License
+
+[MIT](LICENSE)
