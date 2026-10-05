@@ -1,6 +1,6 @@
 {
 	"name": "homebrew-organizer",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"description": "Self-hosted organizer for homebrew recipes, batches, reusable bottles, and QR labels.",
 	"license": "MIT",
