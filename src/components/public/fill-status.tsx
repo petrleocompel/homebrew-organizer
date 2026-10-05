@@ -123,10 +123,7 @@ export function FillHistory({
 				const isLast = index === fills.length - 1;
 				const active = fill.emptiedAt === null;
 				return (
-					<li
-						key={`${fill.filledAt}-${index}`}
-						className="grid grid-cols-[18px_1fr] gap-3"
-					>
+					<li key={fill.filledAt} className="grid grid-cols-[18px_1fr] gap-3">
 						<div className="flex flex-col items-center" aria-hidden="true">
 							<span
 								className={cn(
