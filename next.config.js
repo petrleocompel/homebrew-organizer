@@ -6,6 +6,7 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+	output: "standalone",
 	allowedDevOrigins: ["127.0.0.1"],
 	outputFileTracingIncludes: {
 		"/*": ["./node_modules/@fontsource/noto-sans/files/*.woff"],

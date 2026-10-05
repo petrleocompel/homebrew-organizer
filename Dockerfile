@@ -1,24 +1,38 @@
-FROM node:24-alpine
+# syntax=docker/dockerfile:1
 
+FROM node:24-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
-
 WORKDIR /app
 
+FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+	pnpm install --frozen-lockfile
 
+FROM deps AS build
 COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1 \
+	SKIP_ENV_VALIDATION=1
+RUN pnpm build && pnpm build:scripts
 
-RUN DATABASE_URL="postgresql://app:app@db:5432" \
-    BETTER_AUTH_SECRET="docker-build-only-secret-at-least-32-characters" \
-    BETTER_AUTH_URL="https://localhost" \
-    SKIP_ENV_VALIDATION=1 \
-    pnpm build
+FROM node:24-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production \
+	NEXT_TELEMETRY_DISABLED=1 \
+	PORT=3000 \
+	HOSTNAME=0.0.0.0
 
-ENV NODE_ENV="production"
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
+COPY --from=build --chown=node:node /app/drizzle ./drizzle
+COPY --from=build --chown=node:node /app/dist ./scripts
 
+USER node
 EXPOSE 3000
-ENV PORT="3000"
-ENV HOSTNAME="0.0.0.0"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+	CMD wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1
 
-CMD ["pnpm", "start"]
+# Migrations:   docker run --rm <image> node scripts/migrate.mjs
+# First Owner:  docker run --rm -e ADMIN_EMAIL -e ADMIN_PASSWORD <image> node scripts/seed-admin.mjs
+CMD ["node", "server.js"]

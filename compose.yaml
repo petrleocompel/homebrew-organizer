@@ -1,0 +1,60 @@
+# Self-hosting example: PostgreSQL, a one-shot migration job, and the app.
+# Copy .env.example to .env, fill in the required values, then run:
+#   docker compose up -d
+# Create the first Owner once the stack is up:
+#   docker compose run --rm -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD=... app node scripts/seed-admin.mjs
+name: homebrew-organizer
+
+x-app-image: &app-image ghcr.io/petrleocompel/homebrew-organizer:${HOMEBREW_ORGANIZER_VERSION:-latest}
+x-database-url: &database-url postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app}
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+
+  migrate:
+    image: *app-image
+    command: ["node", "scripts/migrate.mjs"]
+    restart: "no"
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    image: *app-image
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: *database-url
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?set PUBLIC_APP_URL}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-}
+      ALLOWED_QR_HOSTS: ${ALLOWED_QR_HOSTS:-}
+      RECIPE_UPLOAD_MAX_BYTES: ${RECIPE_UPLOAD_MAX_BYTES:-}
+      PDF_UPLOAD_MAX_BYTES: ${PDF_UPLOAD_MAX_BYTES:-}
+      OPERATOR_NAME: ${OPERATOR_NAME:-}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_BUNDLE_ID: ${APPLE_BUNDLE_ID:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:
