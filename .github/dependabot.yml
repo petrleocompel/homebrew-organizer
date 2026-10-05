@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      # Next.js 16 needs the TypeScript compiler API, which TypeScript 7 lacks.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Keep Node.js types on the runtime major (Node.js 24).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
