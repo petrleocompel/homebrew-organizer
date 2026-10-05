@@ -1,6 +1,7 @@
 /**
- * Creates the default admin user via better-auth.
- * Run with: pnpm db:seed-admin
+ * Creates the bootstrap Owner via better-auth, or restores Owner membership
+ * for an existing account with that email.
+ * Run with: ADMIN_EMAIL=... ADMIN_PASSWORD=... pnpm db:seed-admin
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -30,14 +31,19 @@ const { db } = await import("@/server/db");
 const { breweryMembers, users } = await import("@/server/db/schema");
 const { eq } = await import("drizzle-orm");
 
-const email = "admin@example.com";
-const password = "change-me-owner";
+const email = process.env.ADMIN_EMAIL;
+const password = process.env.ADMIN_PASSWORD;
+const name = process.env.ADMIN_NAME || "Admin";
+if (!email || !password) {
+	console.error("ADMIN_EMAIL and ADMIN_PASSWORD are required.");
+	process.exit(1);
+}
 
 console.log(`Creating admin user: ${email}`);
 
 try {
 	const result = await auth.api.signUpEmail({
-		body: { email, password, name: "Admin" },
+		body: { email, password, name },
 	});
 	await db
 		.insert(breweryMembers)
@@ -70,3 +76,6 @@ try {
 		process.exit(1);
 	}
 }
+
+// The database pool keeps the event loop alive.
+process.exit(0);
