@@ -13,6 +13,7 @@ import mashStepSchema from "@beerjson/beerjson/json/mash_step.json";
 import unitsSchema from "@beerjson/beerjson/json/measureable_units.json";
 import miscSchema from "@beerjson/beerjson/json/misc.json";
 import packagingSchema from "@beerjson/beerjson/json/packaging.json";
+import packagingGraphicSchema from "@beerjson/beerjson/json/packaging_graphic.json";
 import packagingVesselSchema from "@beerjson/beerjson/json/packaging_vessel.json";
 import recipeSchema from "@beerjson/beerjson/json/recipe.json";
 import styleSchema from "@beerjson/beerjson/json/style.json";
@@ -48,6 +49,7 @@ for (const schema of [
 	unitsSchema,
 	miscSchema,
 	packagingSchema,
+	packagingGraphicSchema,
 	packagingVesselSchema,
 	recipeSchema,
 	styleSchema,

@@ -77,9 +77,9 @@ export default async function PublicBatchPage(props: {
 							</p>
 						) : (
 							<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-								{batch.bottles.map((bottle, index) => (
+								{batch.bottles.map((bottle) => (
 									<Link
-										key={`${bottle.publicCode}-${bottle.filledAt}-${index}`}
+										key={`${bottle.publicCode}-${bottle.filledAt}`}
 										href={`/b/${bottle.publicCode}`}
 										className="rounded-lg border p-4 transition-colors hover:border-primary/50"
 									>
