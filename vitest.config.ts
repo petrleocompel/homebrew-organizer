@@ -16,6 +16,8 @@ export default defineConfig({
 			NODE_ENV: "test",
 			PUBLIC_APP_URL: "https://brew.example.com",
 			ALLOWED_QR_HOSTS: "brew.example.com",
+			APPLE_TEAM_ID: "ABCDE12345",
+			APPLE_BUNDLE_ID: "com.example.homebrew-scan",
 		},
 	},
 });

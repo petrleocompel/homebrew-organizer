@@ -59,6 +59,8 @@ const screenshots = [
 	{ file: "05-Recent", en: "Recent bottles", cs: "Nedávné lahve" },
 ] as const;
 
+export const dynamic = "force-dynamic";
+
 export default function AppPage() {
 	return (
 		<div className="flex min-h-screen flex-col bg-muted/20">

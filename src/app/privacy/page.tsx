@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicInfoHeader } from "@/components/public-info-header";
+import { SupportContact } from "@/components/support-contact";
+import { env } from "@/env";
 
 export const metadata: Metadata = {
 	title: "Privacy · Homebrew Scan",
 	description: "Privacy information for Homebrew Scan and Homebrew Organizer.",
 };
+
+export const dynamic = "force-dynamic";
 
 export default function PrivacyPage() {
 	return (
@@ -20,7 +24,8 @@ export default function PrivacyPage() {
 						<p className="font-medium text-primary">English</p>
 						<h1 className="mt-2 font-bold text-4xl">Privacy policy</h1>
 						<p className="mt-3 text-muted-foreground">
-							Provider: PEELCO · Effective 27 July 2026
+							{env.OPERATOR_NAME && `Provider: ${env.OPERATOR_NAME} · `}
+							Effective 27 July 2026
 						</p>
 					</header>
 					<section className="space-y-3">
@@ -67,10 +72,7 @@ export default function PrivacyPage() {
 							You may request access, correction, deletion, restriction, or a
 							copy of your personal data, subject to applicable law and
 							necessary audit retention. Send account or privacy requests to{" "}
-							<a className="underline" href="mailto:support@example.com">
-								support@example.com
-							</a>
-							.
+							<SupportContact lang="en" />.
 						</p>
 					</section>
 				</article>
@@ -84,7 +86,8 @@ export default function PrivacyPage() {
 						<p className="font-medium text-primary">Čeština</p>
 						<h2 className="mt-2 font-bold text-4xl">Zásady ochrany soukromí</h2>
 						<p className="mt-3 text-muted-foreground">
-							Poskytovatel: PEELCO · Účinnost od 27. července 2026
+							{env.OPERATOR_NAME && `Poskytovatel: ${env.OPERATOR_NAME} · `}
+							Účinnost od 27. července 2026
 						</p>
 					</header>
 					<section className="space-y-3">
@@ -129,10 +132,7 @@ export default function PrivacyPage() {
 							Můžete požádat o přístup, opravu, smazání, omezení nebo kopii
 							osobních údajů s ohledem na platné právo a nutné auditní záznamy.
 							Žádosti o účet nebo soukromí posílejte na{" "}
-							<a className="underline" href="mailto:support@example.com">
-								support@example.com
-							</a>
-							.
+							<SupportContact lang="cs" />.
 						</p>
 					</section>
 				</article>
